@@ -64,6 +64,7 @@ public final class CommandLine {
         out.println("""
                 Wall Crack Detector — Java 17+
                 Usage: java -jar build/wall-crack-detector.jar --input PHOTO [options]
+                       java -jar build/wall-crack-detector.jar [--gui]
 
                   --input PATH          Input photograph (PNG/JPEG recommended)
                   --output DIR          Export directory (default: output/analysis)
