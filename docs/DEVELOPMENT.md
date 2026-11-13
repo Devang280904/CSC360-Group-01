@@ -43,7 +43,9 @@ On a workstation with a graphical display:
 1. Launch without arguments. Analyze/Export should be disabled initially.
 2. Load `samples/wall-cracked.png` and analyze with defaults. Expect one region,
    about 0.434% coverage, an overlay, a binary mask, and one table row.
-3. Resize the window and switch tabs; verify image proportions remain correct.
+3. Resize the window and change the result selector; verify image proportions
+   remain correct, labels remain readable, and Analyze stays visible. At the
+   minimum window size, scroll through the remaining settings.
 4. Change a setting; confirm the old result clears and Export becomes disabled.
 5. Analyze again, then export to a new folder. Compare the output PNG dimensions
    with the JSON analysis dimensions.

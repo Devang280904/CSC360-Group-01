@@ -2,9 +2,9 @@ package org.wallcrack.app;
 
 import java.awt.GraphicsEnvironment;
 import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
 import org.wallcrack.cli.CommandLine;
 import org.wallcrack.ui.DetectorFrame;
+import org.wallcrack.ui.DesktopTheme;
 
 /** Launches the wall crack detector application. */
 public final class Main {
@@ -22,11 +22,7 @@ public final class Main {
                 return;
             }
             SwingUtilities.invokeLater(() -> {
-                try {
-                    UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-                } catch (ReflectiveOperationException | javax.swing.UnsupportedLookAndFeelException exception) {
-                    // Swing's cross-platform default remains usable if the native theme is unavailable.
-                }
+                DesktopTheme.install();
                 new DetectorFrame().setVisible(true);
             });
         } else {

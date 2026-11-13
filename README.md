@@ -59,12 +59,18 @@ JAR. To use an IDE, open the repository as a Maven project and run
 
 1. Select **Open photograph** and choose a well-lit wall photo.
 2. Adjust settings if necessary, then select **Analyze image**.
-3. Review **Highlighted candidates**, **Binary mask**, and the measurements table.
+3. Use the result selector to switch between **Highlighted** and **Binary mask**,
+   then review the measurements table and summary cards.
 4. Select **Export results** and choose a new results folder.
 
 Magenta marks accepted pixels; red rectangles identify numbered regions.
 Changing settings clears the previous result and disables export until
 reanalysis. No arguments, or `--gui`, opens the desktop.
+
+The settings panel scrolls on smaller windows, while **Analyze image** stays
+visible. The desktop uses a consistent theme across operating systems.
+
+![Desktop workspace showing analysis of the synthetic example](docs/desktop-preview.png)
 
 ## Command-line usage
 

@@ -9,7 +9,7 @@
 | `detection` | Image-to-result analysis without I/O or UI | `CrackDetector` |
 | `model` | Validated settings and immutable snapshots | `DetectionConfig`, `DetectionResult`, `CrackRegion` |
 | `io` | Decode images, render visualizations, export reports | `ImageFiles`, `ResultImages`, `ReportExporter` |
-| `ui` | Desktop controls and background workflow | `DetectorFrame`, `ImagePanel` |
+| `ui` | Desktop controls, theme, and background workflow | `DetectorFrame`, `DetectorWorkspace`, `DesktopTheme`, `ImagePanel` |
 
 ```mermaid
 flowchart LR
@@ -78,6 +78,12 @@ component traversals. The desktop reads/writes Swing controls on the event
 dispatch thread. `SwingWorker` handles loading, detection, rendering, and export.
 Controls are disabled during work. Setting changes clear old results and disable
 export. The CLI explicitly enables headless rendering.
+
+`DetectorFrame` owns the window, while `DetectorWorkspace` owns its contents so
+the full layout can be rendered without a display. `DesktopTheme` installs
+consistent fonts and control styling across platforms. Settings scroll
+independently, the Analyze action remains visible, and both previews share
+the same available image area.
 
 ## I/O and failure behavior
 

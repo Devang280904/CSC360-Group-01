@@ -5,6 +5,8 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
+import java.util.ArrayList;
+import java.util.List;
 import java.awt.image.BufferedImage;
 import javax.swing.JPanel;
 
@@ -23,8 +25,10 @@ public final class ImagePanel extends JPanel {
      */
     public ImagePanel(String placeholder) {
         this.placeholder = placeholder;
-        setBackground(new Color(235, 239, 244));
+        setBackground(new Color(239, 243, 248));
+        setFont(DesktopTheme.font(12, false));
         setPreferredSize(new Dimension(420, 340));
+        setMinimumSize(new Dimension(180, 150));
         getAccessibleContext().setAccessibleName(placeholder);
     }
 
@@ -43,9 +47,24 @@ public final class ImagePanel extends JPanel {
         Graphics2D canvas = (Graphics2D) graphics.create();
         try {
             if (image == null) {
-                canvas.setColor(new Color(85, 99, 116));
-                int textWidth = canvas.getFontMetrics().stringWidth(placeholder);
-                canvas.drawString(placeholder, Math.max(10, (getWidth() - textWidth) / 2), getHeight() / 2);
+                canvas.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                int center = getWidth() / 2;
+                int iconTop = getHeight() / 2 - 48;
+                canvas.setColor(new Color(205, 216, 232));
+                canvas.fillRoundRect(center - 25, iconTop, 50, 44, 12, 12);
+                canvas.setColor(new Color(145, 163, 188));
+                canvas.drawRoundRect(center - 15, iconTop + 10, 30, 24, 4, 4);
+                canvas.drawPolyline(new int[]{center - 12, center - 3, center + 3, center + 12},
+                        new int[]{iconTop + 29, iconTop + 21, iconTop + 26, iconTop + 17}, 4);
+                canvas.setColor(DesktopTheme.MUTED);
+                canvas.setFont(getFont());
+                List<String> lines = wrap(placeholder, canvas, Math.max(80, getWidth() - 44));
+                int baseline = iconTop + 68;
+                for (String line : lines) {
+                    int textWidth = canvas.getFontMetrics().stringWidth(line);
+                    canvas.drawString(line, Math.max(10, (getWidth() - textWidth) / 2), baseline);
+                    baseline += 19;
+                }
                 return;
             }
             double scale = Math.min((double) Math.max(1, getWidth() - 20) / image.getWidth(),
@@ -57,5 +76,19 @@ public final class ImagePanel extends JPanel {
         } finally {
             canvas.dispose();
         }
+    }
+
+    private static List<String> wrap(String text, Graphics2D canvas, int width) {
+        List<String> lines = new ArrayList<>();
+        String line = "";
+        for (String word : text.split(" ")) {
+            String next = line.isEmpty() ? word : line + " " + word;
+            if (!line.isEmpty() && canvas.getFontMetrics().stringWidth(next) > width) {
+                lines.add(line);
+                line = word;
+            } else line = next;
+        }
+        if (!line.isEmpty()) lines.add(line);
+        return lines;
     }
 }
