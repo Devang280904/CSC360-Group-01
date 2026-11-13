@@ -11,7 +11,15 @@ package org.wallcrack.model;
  */
 public record DetectionConfig(int contrastThreshold, int localRadius,
                               int minComponentPixels, int minSpan, int maxDimension) {
-    /** Validates every parameter before processing can begin. */
+    /**
+     * Validates every parameter before processing can begin.
+     * @param contrastThreshold minimum darkness below the local mean (1–100)
+     * @param localRadius neighborhood radius in analysis pixels (2–50)
+     * @param minComponentPixels minimum connected candidate pixels (2–100000)
+     * @param minSpan minimum region diagonal in analysis pixels (2–1000)
+     * @param maxDimension maximum analysis width or height (64–2000)
+     * @throws IllegalArgumentException if any parameter is outside its allowed range
+     */
     public DetectionConfig {
         requireRange(contrastThreshold, 1, 100, "Contrast threshold");
         requireRange(localRadius, 2, 50, "Local radius");
