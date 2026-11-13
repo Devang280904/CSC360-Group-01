@@ -10,9 +10,15 @@ the application does not determine structural safety or crack severity.
 
 ## Features
 
-- Load photographs and compare the original, highlighted overlay, and binary mask.
-- Tune local darkness, neighborhood size, and candidate size filters.
-- Inspect numbered regions with bounding boxes, pixel counts, and spans.
+- Load photographs and inspect original, highlighted overlay, and binary mask views.
+- Interactive pan and zoom with mouse wheel, centering, and 1:1 pixel inspection.
+- Real-time cursor coordinates and RGB/luminance pixel inspector.
+- Detection presets (Balanced, Hairline, Severe Cracks, Textured Surface, High-Res).
+- Tune local darkness, neighborhood size, and candidate size filters with sliders and spinners.
+- Measurement table with severity classification badges (Minor, Moderate, Major).
+- Bi-directional highlighting: selecting or double-clicking table rows centers on that crack.
+- Desktop menu bar with standard keyboard accelerators (Ctrl+O, F5, Ctrl+E, etc.) and Drag & Drop.
+- One-click sample loaders for instant testing with bundled wall photographs.
 - Export PNG visualizations, CSV measurements, and a JSON analysis report.
 - Analyze images from the command line without a graphical display.
 - Keep the desktop responsive with background loading, analysis, and export.
@@ -186,7 +192,7 @@ bash scripts/javadoc.sh
 
 Open `build/docs/index.html` for API documentation. Public APIs and packages
 include Javadoc. Both scripts treat warnings as errors. `mvn test` runs the
-same 20 regression tests through the Exec Maven Plugin.
+same 21 regression tests through the Exec Maven Plugin.
 
 The tests cover positive/negative detection, parameter changes, boundaries,
 resizing, transparency, immutability, cancellation, decoding, exports, CLI

@@ -7,7 +7,7 @@
 | `app` | Select desktop or CLI | `Main` |
 | `cli` | Parse options and return exit codes | `CommandLine` |
 | `detection` | Image-to-result analysis without I/O or UI | `CrackDetector` |
-| `model` | Validated settings and immutable snapshots | `DetectionConfig`, `DetectionResult`, `CrackRegion` |
+| `model` | Validated settings, presets, and immutable snapshots | `DetectionConfig`, `DetectionPreset`, `DetectionResult`, `CrackRegion` |
 | `io` | Decode images, render visualizations, export reports | `ImageFiles`, `ResultImages`, `ReportExporter` |
 | `ui` | Desktop controls, theme, and background workflow | `DetectorFrame`, `DetectorWorkspace`, `DesktopTheme`, `ImagePanel` |
 

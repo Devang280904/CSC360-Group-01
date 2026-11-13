@@ -18,7 +18,7 @@ is unnecessary. Temporary test files are cleaned up after the suite completes.
 
 Maven alternatives are `mvn test` and `mvn package`. The Exec Maven Plugin runs
 the plain Java suite in the `test` phase; it is not a JUnit/Surefire test class.
-Look for `PASS: 20 regression tests.` and build success. Test assertion failures
+Look for `PASS: 21 regression tests.` and build success. Test assertion failures
 fail the Maven goal. `mvn package -DskipTests` explicitly skips execution.
 
 ## Regression coverage
@@ -27,13 +27,13 @@ fail the Maven goal. `mvn package -DskipTests` explicitly skips execution.
 | --- | --- |
 | Detections | Vertical, diagonal, separate, and edge-touching candidates |
 | Rejections | Uniform surfaces, isolated noise, compact patches, smooth gradients |
-| Parameters | Sensitivity, minimum area/span, invalid configuration |
+| Parameters | Sensitivity, presets, minimum area/span, invalid configuration |
 | Input | Tiny images, alpha, resizing, PNG decoding, unsupported/missing files |
 | Integrity | Bounds and area, immutable snapshots, unchanged source, cancellation |
 | Exports | Pixel counts, CSV/JSON metadata, locale, empty results, no overwrite |
 | Application | CLI success/errors and headless Swing preview painting |
 
-The 20 regression tests do not certify real-world accuracy. Add labeled real
+The 21 regression tests do not certify real-world accuracy. Add labeled real
 photos with documented provenance before reporting performance metrics.
 
 ## Manual desktop checks

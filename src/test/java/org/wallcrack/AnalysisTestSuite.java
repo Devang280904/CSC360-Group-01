@@ -128,6 +128,15 @@ public final class AnalysisTestSuite {
             expect(IllegalArgumentException.class, () -> new DetectionConfig(14, 12, 30, 1, 1600));
             expect(IllegalArgumentException.class, () -> new DetectionConfig(14, 12, 30, 15, 2001));
         });
+        test("detection presets provide verified configurations", () -> {
+            var presets = org.wallcrack.model.DetectionPreset.builtIns();
+            check(presets.size() == 5, "preset count");
+            for (var preset : presets) {
+                check(preset.name() != null && !preset.name().isBlank(), "preset name");
+                check(preset.description() != null && !preset.description().isBlank(), "preset description");
+                check(preset.config() != null, "preset config");
+            }
+        });
         test("interrupted analysis cancels promptly", () -> {
             Thread.currentThread().interrupt();
             try { expect(CancellationException.class, () -> detect(SampleImages.blank())); }
