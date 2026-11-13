@@ -8,13 +8,19 @@ import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import javax.swing.JPanel;
 
-/** Aspect-ratio-preserving image preview that fits its available desktop space. */
+/**
+ * Aspect-ratio-preserving image preview that fits its available desktop space.
+ * @serial exclude
+ */
 public final class ImagePanel extends JPanel {
     private static final long serialVersionUID = 1L;
     private transient BufferedImage image;
     private final String placeholder;
 
-    /** @param placeholder text displayed before an image is available */
+    /**
+     * Creates an initially empty image preview.
+     * @param placeholder text displayed before an image is available
+     */
     public ImagePanel(String placeholder) {
         this.placeholder = placeholder;
         setBackground(new Color(235, 239, 244));

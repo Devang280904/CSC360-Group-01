@@ -30,6 +30,8 @@ public final class Main {
                 new DetectorFrame().setVisible(true);
             });
         } else {
+            // CLI image rendering must work even when DISPLAY is unset or unreachable.
+            System.setProperty("java.awt.headless", "true");
             System.exit(CommandLine.run(args, System.out, System.err));
         }
     }

@@ -59,7 +59,10 @@ public final class CommandLine {
         }
     }
 
-    /** @param out destination for usage instructions */
+    /**
+     * Displays available options and defaults.
+     * @param out destination for usage instructions
+     */
     public static void printHelp(PrintStream out) {
         out.println("""
                 Wall Crack Detector — Java 17+

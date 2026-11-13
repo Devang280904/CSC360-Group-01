@@ -38,7 +38,10 @@ import org.wallcrack.io.ResultImages;
 import org.wallcrack.model.DetectionConfig;
 import org.wallcrack.model.DetectionResult;
 
-/** Desktop workflow for image selection, background analysis, visual review, and export. */
+/**
+ * Desktop workflow for image selection, background analysis, visual review, and export.
+ * @serial exclude
+ */
 public final class DetectorFrame extends JFrame {
     private static final long serialVersionUID = 1L;
     private final JButton openButton = new JButton("1. Open photograph");

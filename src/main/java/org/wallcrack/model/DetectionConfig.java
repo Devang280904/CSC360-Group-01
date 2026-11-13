@@ -20,7 +20,10 @@ public record DetectionConfig(int contrastThreshold, int localRadius,
         requireRange(maxDimension, 64, 2000, "Maximum dimension");
     }
 
-    /** @return balanced defaults for dark, thin cracks on lighter wall surfaces */
+    /**
+     * Creates the standard analysis settings.
+     * @return balanced defaults for dark, thin cracks on lighter wall surfaces
+     */
     public static DetectionConfig defaults() {
         return new DetectionConfig(14, 12, 30, 15, 1600);
     }

@@ -44,23 +44,50 @@ public final class DetectionResult {
         this.candidatePixels = count;
     }
 
-    /** @return a defensive copy of the analyzed image */
+    /**
+     * Returns an independent image copy.
+     * @return a defensive copy of the analyzed image
+     */
     public BufferedImage analysisImage() { return copyImage(analysisImage); }
-    /** @return analysis width in pixels */
+    /**
+     * Returns the analyzed width.
+     * @return analysis width in pixels
+     */
     public int width() { return analysisImage.getWidth(); }
-    /** @return analysis height in pixels */
+    /**
+     * Returns the analyzed height.
+     * @return analysis height in pixels
+     */
     public int height() { return analysisImage.getHeight(); }
-    /** @return original input width */
+    /**
+     * Returns the width before resizing.
+     * @return original input width
+     */
     public int originalWidth() { return originalWidth; }
-    /** @return original input height */
+    /**
+     * Returns the height before resizing.
+     * @return original input height
+     */
     public int originalHeight() { return originalHeight; }
-    /** @return immutable connected candidate list */
+    /**
+     * Returns the retained components.
+     * @return immutable connected candidate list
+     */
     public List<CrackRegion> regions() { return regions; }
-    /** @return parameters used for this result */
+    /**
+     * Returns the analysis settings.
+     * @return parameters used for this result
+     */
     public DetectionConfig config() { return config; }
-    /** @return number of pixels in accepted candidates */
+    /**
+     * Returns the retained mask area.
+     * @return number of pixels in accepted candidates
+     */
     public int candidatePixels() { return candidatePixels; }
-    /** @return candidate coverage as a percentage of the analyzed image */
+    /**
+     * Returns the retained area ratio.
+     * @return candidate coverage as a percentage of the analyzed image
+     */
     public double coveragePercent() { return 100.0 * candidatePixels / mask.length; }
 
     /**
