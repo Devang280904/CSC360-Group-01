@@ -68,7 +68,9 @@ Changing settings clears the previous result and disables export until
 reanalysis. No arguments, or `--gui`, opens the desktop.
 
 The settings panel scrolls on smaller windows, while **Analyze image** stays
-visible. The desktop uses a consistent theme across operating systems.
+visible. The desktop opens maximized, uses larger controls and text (at least
+14-point), and keeps its styling consistent across operating systems. Use the
+window's restore button if you prefer a smaller window.
 
 ![Desktop workspace showing analysis of the synthetic example](docs/desktop-preview.png)
 
@@ -188,8 +190,9 @@ same 20 regression tests through the Exec Maven Plugin.
 
 The tests cover positive/negative detection, parameter changes, boundaries,
 resizing, transparency, immutability, cancellation, decoding, exports, CLI
-errors, and headless preview painting. The offline suite, strict Javadoc, and
-Maven packaging were verified on JDK 25 with Java 17 compilation compatibility.
+errors, and headless preview painting. The offline suite and strict Javadoc
+were verified on actual JDK 17, 21, and 25 installations. Maven packaging was
+also verified on JDK 25 with Java 17 compilation compatibility.
 Complete desktop interaction requires manual verification on a graphical
 workstation; headless painting does not verify the full UI workflow.
 See [development instructions](docs/DEVELOPMENT.md).

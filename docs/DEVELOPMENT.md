@@ -40,7 +40,8 @@ photos with documented provenance before reporting performance metrics.
 
 On a workstation with a graphical display:
 
-1. Launch without arguments. Analyze/Export should be disabled initially.
+1. Launch without arguments. The window should open maximized with readable
+   text and larger controls. Analyze/Export should be disabled initially.
 2. Load `samples/wall-cracked.png` and analyze with defaults. Expect one region,
    about 0.434% coverage, an overlay, a binary mask, and one table row.
 3. Resize the window and change the result selector; verify image proportions
@@ -80,3 +81,8 @@ history with `git log --reverse --oneline`.
 GitHub Actions runs the offline regression suite and strict Javadoc checks on
 Java 17, 21, and 25. The workflow requires no external datasets or Maven library
 dependencies. Local Maven packaging is verified separately with `mvn package`.
+
+Use an actual JDK for each compatibility check: `--release 17` on a newer JDK
+checks compilation compatibility but still uses that newer JDK's Javadoc tool.
+Java 17 requires explicit constructor parameter tags on compact record
+constructors, so keep those comments even if newer JDKs accept their omission.

@@ -33,7 +33,7 @@ public final class DesktopTheme {
         } catch (javax.swing.UnsupportedLookAndFeelException exception) {
             throw new IllegalStateException("The Java desktop theme is unavailable.", exception);
         }
-        FontUIResource base = new FontUIResource(font(13, false));
+        FontUIResource base = new FontUIResource(font(14, false));
         var defaults = UIManager.getDefaults();
         for (Object key : defaults.keySet().toArray()) {
             if (defaults.get(key) instanceof FontUIResource) defaults.put(key, base);
@@ -48,11 +48,11 @@ public final class DesktopTheme {
         UIManager.put("TabbedPane.contentBorderInsets", new java.awt.Insets(0, 0, 0, 0));
         UIManager.put("SplitPane.background", BACKGROUND);
         UIManager.put("SplitPaneDivider.border", javax.swing.BorderFactory.createEmptyBorder());
-        UIManager.put("ScrollBar.width", 10);
+        UIManager.put("ScrollBar.width", 16);
     }
 
     static Font font(int size, boolean bold) {
-        return new Font(Font.SANS_SERIF, bold ? Font.BOLD : Font.PLAIN, size);
+        return new Font(Font.SANS_SERIF, bold ? Font.BOLD : Font.PLAIN, Math.max(14, size + 2));
     }
 
     static JLabel label(String text, int size, boolean bold, Color color) {
@@ -91,8 +91,8 @@ public final class DesktopTheme {
                 } finally { canvas.dispose(); }
             }
         };
-        button.setFont(font(13, true));
-        button.setPreferredSize(new Dimension(button.getFontMetrics(button.getFont()).stringWidth(text) + 36, 42));
+        button.setFont(font(14, true));
+        button.setPreferredSize(new Dimension(button.getFontMetrics(button.getFont()).stringWidth(text) + 44, 50));
         button.setMinimumSize(button.getPreferredSize());
         button.setBorderPainted(false);
         button.setContentAreaFilled(false);

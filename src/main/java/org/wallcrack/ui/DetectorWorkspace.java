@@ -116,7 +116,7 @@ final class DetectorWorkspace extends JPanel {
     private JPanel controls() {
         JPanel sidebar = new JPanel(new BorderLayout(0, 12));
         sidebar.setOpaque(false);
-        sidebar.setPreferredSize(new Dimension(284, 500));
+        sidebar.setPreferredSize(new Dimension(350, 500));
 
         JPanel settingsPanel = new JPanel(new java.awt.GridBagLayout());
         settingsPanel.setBackground(Color.WHITE);
@@ -152,7 +152,7 @@ final class DetectorWorkspace extends JPanel {
         scroll.setBorder(BorderFactory.createLineBorder(DesktopTheme.LINE));
         scroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         scroll.getVerticalScrollBar().setUnitIncrement(18);
-        scroll.setMinimumSize(new Dimension(284, 160));
+        scroll.setMinimumSize(new Dimension(350, 160));
         sidebar.add(scroll, BorderLayout.CENTER);
 
         JPanel guide = new JPanel(new GridLayout(0, 1, 0, 5));
@@ -161,7 +161,7 @@ final class DetectorWorkspace extends JPanel {
         guide.add(DesktopTheme.label("Reading your results", 13, true, DesktopTheme.INK));
         guide.add(DesktopTheme.label("●  Candidate pixels", 12, false, new Color(170, 20, 113)));
         guide.add(DesktopTheme.label("□  Region boundaries", 12, false, new Color(177, 47, 56)));
-        guide.add(DesktopTheme.label("Review visually. No safety assessment.", 11, false, DesktopTheme.MUTED));
+        guide.add(DesktopTheme.label("No structural safety assessment.", 11, false, DesktopTheme.MUTED));
         JPanel actions = new JPanel(new BorderLayout(0, 12));
         actions.setOpaque(false);
         actions.add(analyzeButton, BorderLayout.NORTH);
@@ -190,7 +190,7 @@ final class DetectorWorkspace extends JPanel {
         viewMode.addActionListener(event -> viewCards.show(results, (String) viewMode.getSelectedItem()));
         JPanel input = previewCard("Original photograph", fileInfo, original, null);
         JPanel output = previewCard("Detection result",
-                DesktopTheme.label("Magenta pixels indicate possible cracks", 11, false, DesktopTheme.MUTED), results, viewMode);
+                DesktopTheme.label("Possible cracks shown in magenta", 11, false, DesktopTheme.MUTED), results, viewMode);
         JSplitPane previews = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, input, output);
         previews.setResizeWeight(0.5);
         previews.setDividerLocation(0.5);
@@ -202,7 +202,7 @@ final class DetectorWorkspace extends JPanel {
         JTable regions = new JTable(table);
         regions.setAutoCreateRowSorter(true);
         regions.setFillsViewportHeight(true);
-        regions.setRowHeight(32);
+        regions.setRowHeight(40);
         regions.setShowVerticalLines(false);
         regions.setGridColor(DesktopTheme.LINE);
         regions.setIntercellSpacing(new Dimension(0, 1));
@@ -211,7 +211,7 @@ final class DetectorWorkspace extends JPanel {
         regions.getTableHeader().setFont(DesktopTheme.font(12, true));
         regions.getTableHeader().setBackground(new Color(247, 249, 252));
         regions.getTableHeader().setForeground(DesktopTheme.MUTED);
-        regions.getTableHeader().setPreferredSize(new Dimension(100, 34));
+        regions.getTableHeader().setPreferredSize(new Dimension(100, 40));
         regions.getTableHeader().setReorderingAllowed(false);
         var cells = new javax.swing.table.DefaultTableCellRenderer();
         cells.setHorizontalAlignment(JLabel.CENTER);
@@ -410,8 +410,11 @@ final class DetectorWorkspace extends JPanel {
         constraints.gridy++;
         constraints.insets = new java.awt.Insets(0, 0, 4, 0);
         spinner.setToolTipText(description);
-        spinner.setPreferredSize(new Dimension(220, 32));
+        spinner.setPreferredSize(new Dimension(260, 42));
         spinner.setEditor(new JSpinner.NumberEditor(spinner, "0"));
+        var editor = (JSpinner.NumberEditor) spinner.getEditor();
+        editor.getTextField().setFont(DesktopTheme.font(15, false));
+        editor.getTextField().setHorizontalAlignment(JLabel.LEFT);
         panel.add(spinner, constraints);
         constraints.gridy++;
         constraints.insets = new java.awt.Insets(0, 0, 8, 0);
