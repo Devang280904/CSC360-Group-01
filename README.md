@@ -158,6 +158,15 @@ can leave partial files; choose a new folder when retrying.
 
 The detector is deterministic and heuristic. See [architecture details](docs/ARCHITECTURE.md).
 
+## Planned ImageJ migration
+
+Using ImageJ is a project requirement. The current implementation does not yet
+use it. The [ImageJ migration plan](docs/IMAGEJ_MIGRATION_PLAN.md) describes replacing
+the custom detector with ImageJ thresholding, binary processing, and particle
+analysis while simplifying settings and retaining the desktop and headless CLI.
+It includes evaluation criteria, implementation phases, packaging changes, and
+acceptance checks. This is planned work, not an implemented feature.
+
 ## Project structure
 
 ```text

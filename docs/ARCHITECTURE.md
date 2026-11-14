@@ -1,5 +1,10 @@
 # Architecture and detection design
 
+This document describes the current custom implementation. See the
+[ImageJ migration plan](IMAGEJ_MIGRATION_PLAN.md) for the proposed replacement
+pipeline, simplified user experience, and implementation checklist. That migration
+has not yet been implemented.
+
 ## Responsibilities and data flow
 
 | Package | Responsibility | Main types |
