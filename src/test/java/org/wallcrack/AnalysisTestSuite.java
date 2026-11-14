@@ -43,6 +43,7 @@ public final class AnalysisTestSuite {
             var region = result.regions().get(0);
             check(region.x() == 158 && region.y() == 35 && region.width() == 3 && region.height() == 170, "bounds");
             check(region.pixelCount() == 510 && result.candidatePixels() == 510, "mask area");
+            check(region.circularity() > 0.0 && region.circularity() < 0.25, "circularity");
             check(result.isCandidate(159, 100) && !result.isCandidate(20, 20), "mask positions");
         });
         test("diagonal pixels use eight-connectivity", () -> {
@@ -82,9 +83,10 @@ public final class AnalysisTestSuite {
         test("threshold controls faint line sensitivity", () -> {
             var image = SampleImages.blank();
             for (int y = 30; y < 200; y++) image.setRGB(150, y, 0xDCDCDC);
-            check(detect(image).regions().isEmpty(), "default threshold rejects faint line");
-            var sensitive = new DetectionConfig(3, 12, 30, 15, 1600);
-            check(new CrackDetector().detect(image, sensitive).regions().size() == 1, "low threshold accepts line");
+            var standard = new DetectionConfig("Triangle", 0, 30, 0.50, false, 0, 1600);
+            var stricter = new DetectionConfig("Triangle", -15, 30, 0.50, false, 0, 1600);
+            check(!new CrackDetector().detect(image, standard).regions().isEmpty(), "standard threshold accepts faint line");
+            check(new CrackDetector().detect(image, stricter).regions().isEmpty(), "stricter threshold rejects faint line");
         });
         test("edge cracks do not wrap rows", () -> {
             var image = SampleImages.blank();
@@ -100,14 +102,14 @@ public final class AnalysisTestSuite {
         });
         test("analysis resizing preserves original dimensions", () -> {
             var result = new CrackDetector().detect(SampleImages.solid(640, 320, 230),
-                    new DetectionConfig(14, 12, 30, 15, 160));
+                    new DetectionConfig("Triangle", 0, 30, 0.50, false, 0, 160));
             check(result.width() == 160 && result.height() == 80, "analysis limit");
             check(result.originalWidth() == 640 && result.originalHeight() == 320, "original metadata");
         });
-        test("minimum area and span filters are honored", () -> {
+        test("minimum area and circularity filters are honored", () -> {
             var image = SampleImages.verticalCrack();
-            check(new CrackDetector().detect(image, new DetectionConfig(14, 12, 600, 15, 1600)).regions().isEmpty(), "area");
-            check(new CrackDetector().detect(image, new DetectionConfig(14, 12, 30, 200, 1600)).regions().isEmpty(), "span");
+            check(new CrackDetector().detect(image, new DetectionConfig("Triangle", 0, 600, 0.50, false, 0, 1600)).regions().isEmpty(), "area");
+            check(new CrackDetector().detect(image, new DetectionConfig("Triangle", 0, 30, 0.05, false, 0, 1600)).regions().isEmpty(), "circularity");
         });
         test("results protect image and list state", () -> {
             var image = SampleImages.verticalCrack();
@@ -122,20 +124,12 @@ public final class AnalysisTestSuite {
             expect(IndexOutOfBoundsException.class, () -> result.isCandidate(-1, 0));
         });
         test("invalid configuration is rejected", () -> {
-            expect(IllegalArgumentException.class, () -> new DetectionConfig(0, 12, 30, 15, 1600));
-            expect(IllegalArgumentException.class, () -> new DetectionConfig(14, 1, 30, 15, 1600));
-            expect(IllegalArgumentException.class, () -> new DetectionConfig(14, 12, 1, 15, 1600));
-            expect(IllegalArgumentException.class, () -> new DetectionConfig(14, 12, 30, 1, 1600));
-            expect(IllegalArgumentException.class, () -> new DetectionConfig(14, 12, 30, 15, 2001));
-        });
-        test("detection presets provide verified configurations", () -> {
-            var presets = org.wallcrack.model.DetectionPreset.builtIns();
-            check(presets.size() == 5, "preset count");
-            for (var preset : presets) {
-                check(preset.name() != null && !preset.name().isBlank(), "preset name");
-                check(preset.description() != null && !preset.description().isBlank(), "preset description");
-                check(preset.config() != null, "preset config");
-            }
+            expect(IllegalArgumentException.class, () -> new DetectionConfig("Unknown", 0, 30, 0.50, false, 0, 1600));
+            expect(IllegalArgumentException.class, () -> new DetectionConfig("Triangle", -51, 30, 0.50, false, 0, 1600));
+            expect(IllegalArgumentException.class, () -> new DetectionConfig("Triangle", 0, 1, 0.50, false, 0, 1600));
+            expect(IllegalArgumentException.class, () -> new DetectionConfig("Triangle", 0, 30, 1.05, false, 0, 1600));
+            expect(IllegalArgumentException.class, () -> new DetectionConfig("Triangle", 0, 30, 0.50, false, 11, 1600));
+            expect(IllegalArgumentException.class, () -> new DetectionConfig("Triangle", 0, 30, 0.50, false, 0, 2001));
         });
         test("interrupted analysis cancels promptly", () -> {
             Thread.currentThread().interrupt();
@@ -174,6 +168,7 @@ public final class AnalysisTestSuite {
                 check(csv.lines().count() == 2 && csv.contains("1,158,35,3,170,510,"), "CSV region");
                 String json = Files.readString(output.resolve("report.json"));
                 check(json.contains("\"candidateCount\": 1") && json.contains("\"coveragePercent\": 0.664063"), "JSON measurements");
+                check(json.contains("\"schemaVersion\": 2") && json.contains("\"effectiveThreshold\":"), "JSON schema v2");
                 byte[] before = Files.readAllBytes(output.resolve("overlay.png"));
                 expect(IOException.class, () -> ReportExporter.export(result, output));
                 check(java.util.Arrays.equals(before, Files.readAllBytes(output.resolve("overlay.png"))), "no overwrite");
@@ -198,8 +193,9 @@ public final class AnalysisTestSuite {
                     check(CommandLine.run(new String[]{"--input"}, stream, stream) == 2, "missing value");
                     check(CommandLine.run(new String[]{"--output", "x"}, stream, stream) == 2, "missing input");
                     check(CommandLine.run(new String[]{"--input", "x", "--input", "y"}, stream, stream) == 2, "duplicate");
-                    check(CommandLine.run(new String[]{"--input", "x", "--threshold", "abc"}, stream, stream) == 2, "not integer");
-                    check(CommandLine.run(new String[]{"--input", "x", "--threshold", "101"}, stream, stream) == 2, "out of range");
+                    check(CommandLine.run(new String[]{"--input", "x", "--sensitivity", "abc"}, stream, stream) == 2, "not integer");
+                    check(CommandLine.run(new String[]{"--input", "x", "--sensitivity", "51"}, stream, stream) == 2, "out of range");
+                    check(CommandLine.run(new String[]{"--input", "x", "--threshold", "14"}, stream, stream) == 2, "obsolete flag rejected");
                 }
             });
             test("Swing preview paints images and placeholders headlessly", () -> SwingUtilities.invokeAndWait(() -> {

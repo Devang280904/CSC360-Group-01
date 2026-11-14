@@ -1,5 +1,14 @@
 package org.wallcrack.detection;
 
+import ij.ImagePlus;
+import ij.measure.Measurements;
+import ij.measure.ResultsTable;
+import ij.plugin.filter.BackgroundSubtracter;
+import ij.plugin.filter.ParticleAnalyzer;
+import ij.process.AutoThresholder;
+import ij.process.ByteProcessor;
+import ij.process.ColorProcessor;
+import ij.process.ImageProcessor;
 import java.awt.Color;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
@@ -11,14 +20,17 @@ import org.wallcrack.model.CrackRegion;
 import org.wallcrack.model.DetectionConfig;
 import org.wallcrack.model.DetectionResult;
 
-/** Stateless detector combining local darkness with eight-connected shape filtering. */
+/**
+ * Executes wall crack candidate detection using ImageJ thresholding,
+ * binary morphological operations, and particle analysis.
+ */
 public final class CrackDetector {
-    /** Creates a reusable, thread-safe detector with no external model dependencies. */
+    /** Creates a reusable, thread-safe detector powered by ImageJ core. */
     public CrackDetector() { }
 
     /**
-     * Finds dark, elongated candidate regions. Bright cracks and structural severity
-     * cannot be inferred by this algorithm. Input pixels are never modified.
+     * Finds dark candidate regions using ImageJ automatic thresholding
+     * and particle analysis. Input pixels are never modified.
      *
      * @param source input image
      * @param config validated analysis parameters
@@ -29,86 +41,81 @@ public final class CrackDetector {
         Objects.requireNonNull(source, "source");
         Objects.requireNonNull(config, "config");
         checkCancelled();
+
         BufferedImage image = prepareImage(source, config.maxDimension());
         int width = image.getWidth();
         int height = image.getHeight();
-        int[] gray = new int[width * height];
-        long[] integral = new long[(width + 1) * (height + 1)];
-        for (int y = 0; y < height; y++) {
-            checkCancelled();
-            long rowSum = 0;
-            for (int x = 0; x < width; x++) {
-                int rgb = image.getRGB(x, y);
-                int value = (299 * ((rgb >> 16) & 255) + 587 * ((rgb >> 8) & 255)
-                        + 114 * (rgb & 255) + 500) / 1000;
-                gray[y * width + x] = value;
-                rowSum += value;
-                integral[(y + 1) * (width + 1) + x + 1] = integral[y * (width + 1) + x + 1] + rowSum;
-            }
-        }
-        boolean[] dark = new boolean[gray.length];
-        int radius = config.localRadius();
-        for (int y = 0; y < height; y++) {
-            checkCancelled();
-            int top = Math.max(0, y - radius);
-            int bottom = Math.min(height, y + radius + 1);
-            for (int x = 0; x < width; x++) {
-                int left = Math.max(0, x - radius);
-                int right = Math.min(width, x + radius + 1);
-                long sum = integral[bottom * (width + 1) + right] - integral[top * (width + 1) + right]
-                        - integral[bottom * (width + 1) + left] + integral[top * (width + 1) + left];
-                double mean = (double) sum / ((right - left) * (bottom - top));
-                dark[y * width + x] = mean - gray[y * width + x] >= config.contrastThreshold();
-            }
-        }
-        boolean[] retained = new boolean[dark.length];
-        List<CrackRegion> regions = collectRegions(dark, retained, width, height, config);
-        return new DetectionResult(image, source.getWidth(), source.getHeight(), retained, regions, config);
-    }
 
-    private static List<CrackRegion> collectRegions(boolean[] dark, boolean[] retained,
-                                                    int width, int height, DetectionConfig config) {
-        List<CrackRegion> regions = new ArrayList<>();
-        int[] queue = new int[dark.length];
-        for (int start = 0; start < dark.length; start++) {
-            if (start % width == 0) checkCancelled();
-            if (!dark[start]) continue;
-            int head = 0;
-            int tail = 1;
-            queue[0] = start;
-            dark[start] = false;
-            int minX = width, minY = height, maxX = 0, maxY = 0;
-            while (head < tail) {
-                if ((head & 16383) == 0) checkCancelled();
-                int index = queue[head++];
-                int x = index % width;
-                int y = index / width;
-                minX = Math.min(minX, x);
-                minY = Math.min(minY, y);
-                maxX = Math.max(maxX, x);
-                maxY = Math.max(maxY, y);
-                for (int ny = Math.max(0, y - 1); ny <= Math.min(height - 1, y + 1); ny++) {
-                    for (int nx = Math.max(0, x - 1); nx <= Math.min(width - 1, x + 1); nx++) {
-                        int neighbor = ny * width + nx;
-                        if (dark[neighbor]) {
-                            dark[neighbor] = false;
-                            queue[tail++] = neighbor;
-                        }
-                    }
-                }
-            }
-            int boxWidth = maxX - minX + 1;
-            int boxHeight = maxY - minY + 1;
-            double span = Math.hypot(boxWidth, boxHeight);
-            // A compact filled patch has a low squared-span-to-area ratio.
-            double slenderness = span * span / tail;
-            if (tail >= config.minComponentPixels() && span >= config.minSpan() && slenderness >= 3.0) {
-                for (int i = 0; i < tail; i++) retained[queue[i]] = true;
-                regions.add(new CrackRegion(regions.size() + 1, minX, minY,
-                        boxWidth, boxHeight, tail, span));
+        checkCancelled();
+        ColorProcessor cp = new ColorProcessor(image);
+        cp.setRGBWeights(0.299, 0.587, 0.114);
+        ByteProcessor bp = cp.convertToByteProcessor();
+
+        if (config.correctLighting()) {
+            checkCancelled();
+            new BackgroundSubtracter().rollingBallBackground(bp, 50, false, true, false, false, true);
+        }
+
+        checkCancelled();
+        AutoThresholder.Method method = AutoThresholder.Method.valueOf(config.thresholdMethod());
+        int autoThreshold = new AutoThresholder().getThreshold(method, bp.getHistogram());
+        int effectiveThreshold = Math.max(0, Math.min(255, autoThreshold + config.sensitivityOffset()));
+
+        bp.setThreshold(0, effectiveThreshold, ImageProcessor.NO_LUT_UPDATE);
+        ByteProcessor binaryMask = bp.createMask();
+
+        if (config.closingRadius() > 0) {
+            checkCancelled();
+            for (int i = 0; i < config.closingRadius(); i++) binaryMask.dilate(1, 0);
+            for (int i = 0; i < config.closingRadius(); i++) binaryMask.erode(1, 0);
+        }
+
+        checkCancelled();
+        binaryMask.setThreshold(255, 255, ImageProcessor.NO_LUT_UPDATE);
+        ResultsTable rt = new ResultsTable();
+        int measurements = Measurements.AREA | Measurements.RECT | Measurements.SHAPE_DESCRIPTORS;
+        ParticleAnalyzer pa = new ParticleAnalyzer(
+                ParticleAnalyzer.SHOW_MASKS,
+                measurements,
+                rt,
+                config.minArea(),
+                Double.POSITIVE_INFINITY,
+                0.0,
+                config.maxCircularity()
+        );
+        pa.setHideOutputImage(true);
+
+        checkCancelled();
+        ImagePlus maskImp = new ImagePlus("mask", binaryMask);
+        if (!pa.analyze(maskImp)) {
+            throw new IllegalStateException("ImageJ particle analysis failed.");
+        }
+
+        checkCancelled();
+        ImagePlus outputImp = pa.getOutputImage();
+        ImageProcessor acceptedIp = outputImp != null ? outputImp.getProcessor() : new ByteProcessor(width, height);
+
+        boolean[] retained = new boolean[width * height];
+        for (int y = 0; y < height; y++) {
+            int row = y * width;
+            for (int x = 0; x < width; x++) {
+                retained[row + x] = (acceptedIp.get(x, y) == 255);
             }
         }
-        return regions;
+
+        List<CrackRegion> regions = new ArrayList<>(rt.size());
+        for (int i = 0; i < rt.size(); i++) {
+            int rx = (int) Math.round(rt.getValue("BX", i));
+            int ry = (int) Math.round(rt.getValue("BY", i));
+            int rw = (int) Math.round(rt.getValue("Width", i));
+            int rh = (int) Math.round(rt.getValue("Height", i));
+            int area = (int) Math.round(rt.getValue("Area", i));
+            double circularity = rt.getValue("Circ.", i);
+            double span = Math.hypot(rw, rh);
+            regions.add(new CrackRegion(i + 1, rx, ry, rw, rh, area, span, circularity));
+        }
+
+        return new DetectionResult(image, source.getWidth(), source.getHeight(), retained, regions, config, effectiveThreshold);
     }
 
     private static BufferedImage prepareImage(BufferedImage source, int maximum) {

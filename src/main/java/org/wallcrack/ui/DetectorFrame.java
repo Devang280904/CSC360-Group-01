@@ -16,7 +16,6 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.KeyStroke;
-import org.wallcrack.model.DetectionPreset;
 
 /**
  * Desktop application window containing menu actions, accelerators, application icons,
@@ -163,19 +162,10 @@ public final class DetectorFrame extends JFrame {
         runDetection.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F5, 0));
         runDetection.addActionListener(e -> workspace.analyze());
 
-        JMenu presetsMenu = new JMenu("Detection Profiles");
-        for (DetectionPreset preset : DetectionPreset.builtIns()) {
-            JMenuItem item = new JMenuItem(preset.name());
-            item.setToolTipText(preset.description());
-            item.addActionListener(e -> workspace.applyPreset(preset.config()));
-            presetsMenu.add(item);
-        }
-
         JMenuItem resetItem = new JMenuItem("Reset Settings to Default");
         resetItem.addActionListener(e -> workspace.resetDefaults());
 
         menu.add(runDetection);
-        menu.add(presetsMenu);
         menu.addSeparator();
         menu.add(resetItem);
         return menu;
@@ -224,19 +214,18 @@ public final class DetectorFrame extends JFrame {
 
     private void showMethodology() {
         String message = """
-                DETECTION ALGORITHM SPECIFICATION
+                DETECTION ALGORITHM SPECIFICATION (ImageJ Core)
 
                 1. Grayscale Conversion:
-                   Standard integer luminance: gray = (299*R + 587*G + 114*B + 500) / 1000.
-                2. O(1) Integral Image Luminance:
-                   A 64-bit integral image allows constant-time local neighborhood sum queries.
-                3. Adaptive Contrast Thresholding:
-                   Pixels darker than localMean(x,y) - contrastThreshold are flagged as candidates.
-                4. 8-Connected Component Labeling:
-                   Iterative breadth-first queue traversal extracts connected regions.
-                5. Morphological Slenderness Filtering:
-                   Candidate regions must meet minimum pixel count, minimum bounding-box span,
-                   and slenderness ratio (span² / area >= 3.0) to filter out compact circular patches.
+                   Standard luminance: gray = (299*R + 587*G + 114*B + 500) / 1000.
+                2. Optional Uneven-Lighting Correction:
+                   ImageJ rolling-ball background subtraction isolates dark surface marks.
+                3. Automatic Thresholding:
+                   ImageJ AutoThresholder (Triangle or Otsu) with sensitivity adjustment.
+                4. Optional Binary Closing:
+                   ImageJ morphological dilation and erosion to bridge minor hairline discontinuities.
+                5. Particle Analysis:
+                   ImageJ ParticleAnalyzer extracts candidate regions with area and circularity filters.
                 """;
         JOptionPane.showMessageDialog(this, message, "Detection Methodology", JOptionPane.INFORMATION_MESSAGE);
     }
@@ -246,7 +235,7 @@ public final class DetectorFrame extends JFrame {
                 KEYBOARD SHORTCUTS
 
                 Ctrl + O           Open photograph
-                F5 / Ctrl + R      Run wall crack detection
+                F5                 Run wall crack detection
                 Ctrl + E           Export report bundle
                 Ctrl + Shift + C   Copy region measurements as CSV
                 Ctrl + 1           Switch to Highlighted Overlay view
@@ -270,8 +259,8 @@ public final class DetectorFrame extends JFrame {
         content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
 
         JLabel title = DesktopTheme.label("Wall Crack Detector", 20, true, DesktopTheme.INK);
-        JLabel version = DesktopTheme.label("Version 1.0.0 — Java 17+ Enterprise Edition", 12, false, DesktopTheme.BLUE);
-        JLabel desc = DesktopTheme.label("Professional desktop & CLI inspection suite for detecting surface cracks and edges.",
+        JLabel version = DesktopTheme.label("Version 1.0.0 — Java 17+", 12, false, DesktopTheme.BLUE);
+        JLabel desc = DesktopTheme.label("Desktop & CLI application for reviewing possible cracks in wall photographs.",
                 12, false, DesktopTheme.INK);
         JLabel note = DesktopTheme.label("Engineered with dependency-free native Java 2D and Swing.", 11, false, DesktopTheme.MUTED);
 

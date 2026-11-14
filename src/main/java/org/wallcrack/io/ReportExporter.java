@@ -48,10 +48,10 @@ public final class ReportExporter {
     }
 
     private static String csv(DetectionResult result) {
-        StringBuilder text = new StringBuilder("id,x,y,width,height,pixel_count,span_analysis_pixels\n");
+        StringBuilder text = new StringBuilder("id,x,y,width,height,pixel_count,box_diagonal_pixels,circularity\n");
         for (var region : result.regions()) {
-            text.append(String.format(Locale.ROOT, "%d,%d,%d,%d,%d,%d,%.3f%n", region.id(),
-                    region.x(), region.y(), region.width(), region.height(), region.pixelCount(), region.span()));
+            text.append(String.format(Locale.ROOT, "%d,%d,%d,%d,%d,%d,%.3f,%.3f%n", region.id(),
+                    region.x(), region.y(), region.width(), region.height(), region.pixelCount(), region.span(), region.circularity()));
         }
         return text.toString();
     }
@@ -60,34 +60,39 @@ public final class ReportExporter {
         var config = result.config();
         StringBuilder text = new StringBuilder(String.format(Locale.ROOT, """
                 {
-                  "schemaVersion": 1,
-                  "method": "local-contrast-connected-components",
+                  "schemaVersion": 2,
+                  "engine": "ImageJ 1.54p",
+                  "method": "imagej-autothreshold-particle-analysis",
                   "coordinateSystem": "analysis image pixels; origin at top left",
                   "originalWidth": %d,
                   "originalHeight": %d,
                   "analysisWidth": %d,
                   "analysisHeight": %d,
+                  "effectiveThreshold": %d,
                   "candidateCount": %d,
                   "candidatePixels": %d,
                   "coveragePercent": %.6f,
                   "config": {
-                    "contrastThreshold": %d,
-                    "localRadius": %d,
-                    "minComponentPixels": %d,
-                    "minSpan": %d,
+                    "thresholdMethod": "%s",
+                    "sensitivityOffset": %d,
+                    "minArea": %d,
+                    "maxCircularity": %.2f,
+                    "correctLighting": %b,
+                    "closingRadius": %d,
                     "maxDimension": %d
                   },
                   "regions": [
                 """, result.originalWidth(), result.originalHeight(), result.width(), result.height(),
-                result.regions().size(), result.candidatePixels(), result.coveragePercent(),
-                config.contrastThreshold(), config.localRadius(), config.minComponentPixels(),
-                config.minSpan(), config.maxDimension()));
+                result.effectiveThreshold(), result.regions().size(), result.candidatePixels(), result.coveragePercent(),
+                config.thresholdMethod(), config.sensitivityOffset(), config.minArea(), config.maxCircularity(),
+                config.correctLighting(), config.closingRadius(), config.maxDimension()));
         for (int i = 0; i < result.regions().size(); i++) {
             var region = result.regions().get(i);
             text.append(String.format(Locale.ROOT,
                     "    {\"id\": %d, \"x\": %d, \"y\": %d, \"width\": %d, \"height\": %d, "
-                    + "\"pixelCount\": %d, \"span\": %.3f}%s%n", region.id(), region.x(), region.y(),
-                    region.width(), region.height(), region.pixelCount(), region.span(),
+                    + "\"pixelCount\": %d, \"boxDiagonal\": %.3f, \"circularity\": %.3f}%s%n",
+                    region.id(), region.x(), region.y(), region.width(), region.height(),
+                    region.pixelCount(), region.span(), region.circularity(),
                     i + 1 < result.regions().size() ? "," : ""));
         }
         return text.append("  ]\n}\n").toString();

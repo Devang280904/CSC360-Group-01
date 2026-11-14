@@ -14,8 +14,15 @@ import org.wallcrack.model.DetectionConfig;
 
 /** Headless entry point with explicit error codes and configurable analysis parameters. */
 public final class CommandLine {
-    private static final Set<String> OPTIONS = Set.of("--input", "--output", "--threshold", "--radius",
-            "--min-pixels", "--min-span", "--max-dimension");
+    private static final Set<String> OPTIONS = Set.of(
+            "--input", "--output", "--method", "--sensitivity",
+            "--min-area", "--max-circularity", "--correct-lighting",
+            "--closing", "--max-dimension"
+    );
+
+    private static final Set<String> OBSOLETE_OPTIONS = Set.of(
+            "--threshold", "--radius", "--min-pixels", "--min-span"
+    );
 
     private CommandLine() { }
 
@@ -37,15 +44,22 @@ public final class CommandLine {
             Path input = Path.of(options.get("--input"));
             Path output = Path.of(options.getOrDefault("--output", "output/analysis"));
             var defaults = DetectionConfig.defaults();
-            var config = new DetectionConfig(number(options, "--threshold", defaults.contrastThreshold()),
-                    number(options, "--radius", defaults.localRadius()),
-                    number(options, "--min-pixels", defaults.minComponentPixels()),
-                    number(options, "--min-span", defaults.minSpan()),
-                    number(options, "--max-dimension", defaults.maxDimension()));
+
+            String method = options.getOrDefault("--method", defaults.thresholdMethod());
+            int sensitivity = number(options, "--sensitivity", defaults.sensitivityOffset());
+            int minArea = number(options, "--min-area", defaults.minArea());
+            double maxCirc = decimal(options, "--max-circularity", defaults.maxCircularity());
+            boolean correctLighting = options.containsKey("--correct-lighting")
+                    ? Boolean.parseBoolean(options.get("--correct-lighting"))
+                    : defaults.correctLighting();
+            int closing = number(options, "--closing", defaults.closingRadius());
+            int maxDim = number(options, "--max-dimension", defaults.maxDimension());
+
+            var config = new DetectionConfig(method, sensitivity, minArea, maxCirc, correctLighting, closing, maxDim);
             var result = new CrackDetector().detect(ImageFiles.read(input), config);
             ReportExporter.export(result, output);
-            out.printf(Locale.ROOT, "Possible crack regions: %d%nCandidate coverage: %.3f%%%nAnalysis: %d x %d pixels%n",
-                    result.regions().size(), result.coveragePercent(), result.width(), result.height());
+            out.printf(Locale.ROOT, "Candidate regions: %d%nCandidate coverage: %.3f%%%nAnalysis: %d x %d pixels%nEffective threshold: %d%n",
+                    result.regions().size(), result.coveragePercent(), result.width(), result.height(), result.effectiveThreshold());
             out.println("Reports saved to: " + output.toAbsolutePath().normalize());
             out.println("Candidates require visual review; this result does not assess structural safety.");
             return 0;
@@ -65,18 +79,20 @@ public final class CommandLine {
      */
     public static void printHelp(PrintStream out) {
         out.println("""
-                Wall Crack Detector — Java 17+
+                Wall Crack Detector — ImageJ Powered
                 Usage: java -jar build/wall-crack-detector.jar --input PHOTO [options]
                        java -jar build/wall-crack-detector.jar [--gui]
 
-                  --input PATH          Input photograph (PNG/JPEG recommended)
-                  --output DIR          Export directory (default: output/analysis)
-                  --threshold N         Local darkness threshold, 1–100 (default: 14)
-                  --radius N            Neighborhood radius, 2–50 (default: 12)
-                  --min-pixels N        Minimum connected pixels, 2–100000 (default: 30)
-                  --min-span N          Minimum region diagonal, 2–1000 (default: 15)
-                  --max-dimension N     Analysis size limit, 64–2000 (default: 1600)
-                  --help, -h            Show this help
+                  --input PATH               Input photograph (PNG/JPEG recommended)
+                  --output DIR              Export directory (default: output/analysis)
+                  --method NAME             Auto-threshold method: Triangle or Otsu (default: Triangle)
+                  --sensitivity N           Manual threshold offset, -50 to +50 (default: 0)
+                  --min-area N              Minimum particle area in pixels, 2–100000 (default: 30)
+                  --max-circularity F       Maximum circularity filter, 0.01–1.0 (default: 0.50)
+                  --correct-lighting [BOOL] Enable rolling-ball background correction (default: false)
+                  --closing N               Closing radius to connect small gaps, 0–10 (default: 0)
+                  --max-dimension N         Analysis size limit, 64–2000 (default: 1600)
+                  --help, -h                Show this help
 
                 Each run exports overlay.png, mask.png, regions.csv, and report.json.
                 Existing report files are never overwritten. Coordinates use the analysis image.
@@ -87,6 +103,9 @@ public final class CommandLine {
         Map<String, String> options = new HashMap<>();
         for (int i = 0; i < args.length; i += 2) {
             String option = args[i];
+            if (OBSOLETE_OPTIONS.contains(option)) {
+                throw new IllegalArgumentException("Option " + option + " is obsolete. Use the new ImageJ parameters. See --help.");
+            }
             if (!OPTIONS.contains(option)) throw new IllegalArgumentException("Unknown option: " + option);
             if (i + 1 >= args.length || args[i + 1].startsWith("--") || args[i + 1].isBlank()) {
                 throw new IllegalArgumentException("Missing value for " + option);
@@ -103,6 +122,14 @@ public final class CommandLine {
             return Integer.parseInt(options.getOrDefault(name, Integer.toString(fallback)));
         } catch (NumberFormatException exception) {
             throw new IllegalArgumentException(name + " must be a whole number.", exception);
+        }
+    }
+
+    private static double decimal(Map<String, String> options, String name, double fallback) {
+        try {
+            return Double.parseDouble(options.getOrDefault(name, Double.toString(fallback)));
+        } catch (NumberFormatException exception) {
+            throw new IllegalArgumentException(name + " must be a decimal number.", exception);
         }
     }
 }

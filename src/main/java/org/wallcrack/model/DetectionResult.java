@@ -12,6 +12,7 @@ public final class DetectionResult {
     private final boolean[] mask;
     private final List<CrackRegion> regions;
     private final DetectionConfig config;
+    private final int effectiveThreshold;
     private final int candidatePixels;
 
     /**
@@ -23,9 +24,11 @@ public final class DetectionResult {
      * @param mask row-major retained candidate mask
      * @param regions retained connected components
      * @param config parameters used for analysis
+     * @param effectiveThreshold final 8-bit threshold applied after sensitivity offset
      */
     public DetectionResult(BufferedImage image, int originalWidth, int originalHeight,
-                           boolean[] mask, List<CrackRegion> regions, DetectionConfig config) {
+                           boolean[] mask, List<CrackRegion> regions, DetectionConfig config,
+                           int effectiveThreshold) {
         Objects.requireNonNull(image, "image");
         if (originalWidth < 1 || originalHeight < 1
                 || mask.length != image.getWidth() * image.getHeight()) {
@@ -37,11 +40,27 @@ public final class DetectionResult {
         this.mask = mask.clone();
         this.regions = List.copyOf(regions);
         this.config = Objects.requireNonNull(config, "config");
+        this.effectiveThreshold = effectiveThreshold;
         int count = 0;
         for (boolean value : mask) {
             if (value) count++;
         }
         this.candidatePixels = count;
+    }
+
+    /**
+     * Creates a result with a default effective threshold of 0.
+     *
+     * @param image image used for analysis
+     * @param originalWidth width before resizing
+     * @param originalHeight height before resizing
+     * @param mask row-major retained candidate mask
+     * @param regions retained connected components
+     * @param config parameters used for analysis
+     */
+    public DetectionResult(BufferedImage image, int originalWidth, int originalHeight,
+                           boolean[] mask, List<CrackRegion> regions, DetectionConfig config) {
+        this(image, originalWidth, originalHeight, mask, regions, config, 0);
     }
 
     /**
@@ -79,6 +98,11 @@ public final class DetectionResult {
      * @return parameters used for this result
      */
     public DetectionConfig config() { return config; }
+    /**
+     * Returns the effective threshold level used.
+     * @return 8-bit luminance threshold (0–255)
+     */
+    public int effectiveThreshold() { return effectiveThreshold; }
     /**
      * Returns the retained mask area.
      * @return number of pixels in accepted candidates

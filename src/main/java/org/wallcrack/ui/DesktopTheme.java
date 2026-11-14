@@ -49,13 +49,13 @@ public final class DesktopTheme {
     /** Soft surface tint for cards and elevated panels. */
     public static final Color CARD_BACKGROUND = Color.WHITE;
 
-    /** Success emerald tint for minor severity and verified state. */
+    /** Emerald tint for successful operations. */
     public static final Color SUCCESS = new Color(16, 185, 129);
 
-    /** Amber warning tint for moderate severity and caution cues. */
+    /** Amber tint for attention and selection cues. */
     public static final Color WARNING = new Color(245, 158, 11);
 
-    /** Crimson danger tint for major severity and critical defects. */
+    /** Crimson tint for operation errors. */
     public static final Color DANGER = new Color(239, 68, 68);
 
     /** Magenta crack candidate highlight. */
@@ -282,7 +282,7 @@ public final class DesktopTheme {
     }
 
     /**
-     * Creates a pill-shaped badge component for status and severity cues.
+     * Creates a pill-shaped badge component for status cues.
      *
      * @param text badge text
      * @param bg background fill
