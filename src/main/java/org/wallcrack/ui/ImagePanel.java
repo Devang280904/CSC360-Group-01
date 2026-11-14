@@ -445,6 +445,10 @@ public final class ImagePanel extends JPanel {
             }
         }
 
+        /**
+         * Transforms screen viewport coordinates back into original image pixel coordinates
+         * by applying the inverse of the current pan and zoom AffineTransform.
+         */
         private Point2D toImagePoint(Point screenPoint) {
             double scale = getZoomScale();
             double ox = autoFit ? (getWidth() - image.getWidth() * scale) / 2.0 : panX;

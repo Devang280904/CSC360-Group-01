@@ -4,7 +4,18 @@ import java.awt.image.BufferedImage;
 import java.util.List;
 import java.util.Objects;
 
-/** Stores an analysis image, an immutable mask, and the corresponding candidate measurements. */
+/**
+ * Immutable snapshot storing an analysis image, binary candidate mask,
+ * and detected region measurements.
+ *
+ * <p>Thread safety and integrity guarantees:
+ * <ul>
+ *   <li>The underlying {@link BufferedImage} is defensively copied upon creation and return.</li>
+ *   <li>The candidate {@code boolean[]} mask is cloned to prevent external modification.</li>
+ *   <li>The region list is wrapped in an unmodifiable {@link List#copyOf(java.util.Collection)}.</li>
+ *   <li>Coordinates are stored in zero-based analysis-image pixels (top-left origin).</li>
+ * </ul>
+ */
 public final class DetectionResult {
     private final BufferedImage analysisImage;
     private final int originalWidth;
@@ -41,6 +52,8 @@ public final class DetectionResult {
         this.regions = List.copyOf(regions);
         this.config = Objects.requireNonNull(config, "config");
         this.effectiveThreshold = effectiveThreshold;
+
+        // Count candidate pixels in the accepted mask
         int count = 0;
         for (boolean value : mask) {
             if (value) count++;
@@ -68,46 +81,55 @@ public final class DetectionResult {
      * @return a defensive copy of the analyzed image
      */
     public BufferedImage analysisImage() { return copyImage(analysisImage); }
+
     /**
      * Returns the analyzed width.
      * @return analysis width in pixels
      */
     public int width() { return analysisImage.getWidth(); }
+
     /**
      * Returns the analyzed height.
      * @return analysis height in pixels
      */
     public int height() { return analysisImage.getHeight(); }
+
     /**
      * Returns the width before resizing.
      * @return original input width
      */
     public int originalWidth() { return originalWidth; }
+
     /**
      * Returns the height before resizing.
      * @return original input height
      */
     public int originalHeight() { return originalHeight; }
+
     /**
      * Returns the retained components.
      * @return immutable connected candidate list
      */
     public List<CrackRegion> regions() { return regions; }
+
     /**
      * Returns the analysis settings.
      * @return parameters used for this result
      */
     public DetectionConfig config() { return config; }
+
     /**
      * Returns the effective threshold level used.
      * @return 8-bit luminance threshold (0–255)
      */
     public int effectiveThreshold() { return effectiveThreshold; }
+
     /**
      * Returns the retained mask area.
      * @return number of pixels in accepted candidates
      */
     public int candidatePixels() { return candidatePixels; }
+
     /**
      * Returns the retained area ratio.
      * @return candidate coverage as a percentage of the analyzed image
@@ -126,6 +148,9 @@ public final class DetectionResult {
         return mask[y * width() + x];
     }
 
+    /**
+     * Creates a defensive RGB deep copy of a BufferedImage.
+     */
     private static BufferedImage copyImage(BufferedImage source) {
         BufferedImage copy = new BufferedImage(source.getWidth(), source.getHeight(), BufferedImage.TYPE_INT_RGB);
         var graphics = copy.createGraphics();
