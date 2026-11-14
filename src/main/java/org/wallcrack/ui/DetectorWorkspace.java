@@ -58,7 +58,7 @@ import org.wallcrack.model.DetectionConfig;
 import org.wallcrack.model.DetectionResult;
 
 /**
- * Desktop workspace providing wall photograph loading, ImageJ detection tuning,
+ * Modern, uncluttered desktop workspace providing wall photograph loading, ImageJ detection tuning,
  * interactive zoom/pan visual review, and multi-format report exports.
  *
  * @serial exclude
@@ -77,11 +77,16 @@ public final class DetectorWorkspace extends JPanel {
     // Detection settings
     private final JComboBox<String> methodCombo = new JComboBox<>(new String[]{"Triangle", "Otsu"});
     private final JSpinner sensitivity = spinner(0, -50, 50);
+    private final JLabel sensitivityBadge = DesktopTheme.badge("0", new Color(241, 245, 249), DesktopTheme.INK);
     private final JSpinner minArea = spinner(30, 2, 100_000);
+    private final JLabel minAreaBadge = DesktopTheme.badge("30 px", new Color(241, 245, 249), DesktopTheme.INK);
     private final JSpinner maxCircularity = new JSpinner(new SpinnerNumberModel(0.50, 0.01, 1.00, 0.05));
-    private final JCheckBox correctLighting = new JCheckBox("Correct uneven surface lighting");
+    private final JLabel maxCircBadge = DesktopTheme.badge("0.50", new Color(241, 245, 249), DesktopTheme.INK);
+    private final JCheckBox correctLighting = new JCheckBox("Flatten uneven surface lighting");
     private final JSpinner closingRadius = spinner(0, 0, 10);
+    private final JLabel closingBadge = DesktopTheme.badge("0 px", new Color(241, 245, 249), DesktopTheme.INK);
     private final JSpinner maxDimension = spinner(1600, 64, 2000);
+    private final JLabel maxDimBadge = DesktopTheme.badge("1600 px", new Color(241, 245, 249), DesktopTheme.INK);
     private final transient List<JSpinner> settings = List.of(sensitivity, minArea, maxCircularity, closingRadius, maxDimension);
     private boolean resettingSettings;
 
@@ -91,7 +96,9 @@ public final class DetectorWorkspace extends JPanel {
     private final ImagePanel mask = new ImagePanel("Accepted candidate pixels appear in white");
     private final java.awt.CardLayout viewCards = new java.awt.CardLayout();
     private final JPanel resultsCardPanel = new JPanel(viewCards);
-    private final JComboBox<String> viewMode = new JComboBox<>(new String[]{"Highlighted Overlay", "Binary Mask"});
+    private final JButton overlayTabButton = DesktopTheme.iconButton("Highlighted Overlay", "Show photograph with highlighted crack candidates");
+    private final JButton maskTabButton = DesktopTheme.iconButton("Binary Mask", "Show clean binary edge mask");
+    private String activeViewMode = "Highlighted Overlay";
 
     // Zoom badges
     private final JLabel originalZoomBadge = DesktopTheme.badge("Fit", new Color(241, 245, 249), DesktopTheme.MUTED);
@@ -101,17 +108,18 @@ public final class DetectorWorkspace extends JPanel {
     private final JLabel statusDot = new JLabel("●");
     private final JLabel status = new JLabel("Ready. Open a wall photograph or sample to begin.");
     private final JLabel pixelInspector = new JLabel("Cursor: —");
-    private final JLabel fileInfo = new JLabel("No photograph selected");
+    private final JLabel fileDimensionsBadge = DesktopTheme.badge("No image", new Color(241, 245, 249), DesktopTheme.MUTED);
     private final JLabel regionCount = metricValue("—");
     private final JLabel regionBadge = DesktopTheme.badge("IDLE", new Color(241, 245, 249), DesktopTheme.MUTED);
+    private final JLabel regionDetail = DesktopTheme.label("Waiting for analysis", 11, false, DesktopTheme.MUTED);
     private final JLabel coverage = metricValue("—");
     private final JLabel coverageDetail = DesktopTheme.label("0 pixels flagged", 11, false, DesktopTheme.MUTED);
     private final JLabel maxSpanMetric = metricValue("—");
     private final JLabel maxSpanDetail = DesktopTheme.label("Bounding-box diagonal", 11, false, DesktopTheme.MUTED);
     private final JLabel analysisSize = metricValue("—");
-    private final JLabel analysisScaleDetail = DesktopTheme.label("No active image", 11, false, DesktopTheme.MUTED);
+    private final JLabel analysisScaleDetail = DesktopTheme.label("Analysis limit: 1600 px", 11, false, DesktopTheme.MUTED);
     private final JProgressBar progress = new JProgressBar();
-    private final JLabel summary = new JLabel("Analyze a photograph to view region measurements");
+    private final JLabel summary = new JLabel("Double-click row to center viewport on crack");
 
     // Region measurements table
     private final DefaultTableModel table = new DefaultTableModel(
@@ -141,9 +149,9 @@ public final class DetectorWorkspace extends JPanel {
 
     /** Creates the desktop workspace layout; instantiate on the Swing event dispatch thread. */
     public DetectorWorkspace() {
-        super(new BorderLayout(0, 14));
+        super(new BorderLayout(0, 12));
         setBackground(DesktopTheme.BACKGROUND);
-        setBorder(BorderFactory.createEmptyBorder(16, 18, 12, 18));
+        setBorder(BorderFactory.createEmptyBorder(14, 16, 12, 16));
 
         add(createHeaderPanel(), BorderLayout.NORTH);
         add(createMainSplit(), BorderLayout.CENTER);
@@ -158,27 +166,29 @@ public final class DetectorWorkspace extends JPanel {
         JPanel header = new JPanel(new BorderLayout(16, 0));
         header.setOpaque(false);
 
+        // Title and tagline
         JPanel titleArea = new JPanel();
         titleArea.setLayout(new BoxLayout(titleArea, BoxLayout.Y_AXIS));
         titleArea.setOpaque(false);
 
         JPanel titleRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         titleRow.setOpaque(false);
-        titleRow.add(DesktopTheme.label("Wall Crack Detector", 24, true, DesktopTheme.INK));
-        titleRow.add(DesktopTheme.badge("ImageJ", new Color(238, 242, 255), DesktopTheme.BLUE));
+        titleRow.add(DesktopTheme.label("Wall Crack Detector", 22, true, DesktopTheme.INK));
+        titleRow.add(DesktopTheme.badge("ImageJ Core", new Color(238, 242, 255), DesktopTheme.BLUE));
 
-        JLabel subtitle = DesktopTheme.label("Highlighted regions require visual review. Measurements are in image pixels.",
-                13, false, DesktopTheme.MUTED);
+        JLabel subtitle = DesktopTheme.label("Highlighted candidate regions require visual review. Measurements are in image pixels.",
+                12, false, DesktopTheme.MUTED);
         titleArea.add(titleRow);
-        titleArea.add(Box.createVerticalStrut(4));
+        titleArea.add(Box.createVerticalStrut(3));
         titleArea.add(subtitle);
         header.add(titleArea, BorderLayout.WEST);
 
-        JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 4));
+        // Action toolbar
+        JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         actions.setOpaque(false);
-        actions.add(DesktopTheme.label("Samples:", 12, true, DesktopTheme.MUTED));
-        sampleCrackedButton.setPreferredSize(new Dimension(104, 38));
-        sampleCleanButton.setPreferredSize(new Dimension(94, 38));
+        actions.add(DesktopTheme.label("Samples:", 11, true, DesktopTheme.MUTED));
+        sampleCrackedButton.setPreferredSize(new Dimension(104, 36));
+        sampleCleanButton.setPreferredSize(new Dimension(94, 36));
         actions.add(sampleCrackedButton);
         actions.add(sampleCleanButton);
         actions.add(Box.createHorizontalStrut(8));
@@ -191,14 +201,14 @@ public final class DetectorWorkspace extends JPanel {
     }
 
     private JPanel createMainSplit() {
-        JPanel container = new JPanel(new BorderLayout(0, 12));
+        JPanel container = new JPanel(new BorderLayout(0, 10));
         container.setOpaque(false);
         container.add(createMetricsRow(), BorderLayout.NORTH);
 
         JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, createSidebar(), createInspectionArea());
         splitPane.setResizeWeight(0.0);
-        splitPane.setDividerLocation(340);
-        splitPane.setDividerSize(10);
+        splitPane.setDividerLocation(310);
+        splitPane.setDividerSize(8);
         splitPane.setContinuousLayout(true);
         splitPane.setBorder(BorderFactory.createEmptyBorder());
         splitPane.setOpaque(false);
@@ -208,51 +218,56 @@ public final class DetectorWorkspace extends JPanel {
     }
 
     private JPanel createMetricsRow() {
-        JPanel metrics = new JPanel(new GridLayout(1, 4, 12, 0));
+        JPanel metrics = new JPanel(new GridLayout(1, 4, 10, 0));
         metrics.setOpaque(false);
         metrics.setPreferredSize(new Dimension(100, 78));
-        metrics.add(metricCard("CANDIDATE REGIONS", regionCount, regionBadge));
-        metrics.add(metricCard("SURFACE COVERAGE", coverage, coverageDetail));
-        metrics.add(metricCard("MAX BOX DIAGONAL", maxSpanMetric, maxSpanDetail));
-        metrics.add(metricCard("RESOLUTION / LIMIT", analysisSize, analysisScaleDetail));
+
+        metrics.add(metricCard("CANDIDATE REGIONS", regionCount, regionBadge, regionDetail));
+        metrics.add(metricCard("SURFACE COVERAGE", coverage, null, coverageDetail));
+        metrics.add(metricCard("MAX BOX DIAGONAL", maxSpanMetric, null, maxSpanDetail));
+        metrics.add(metricCard("ANALYSIS SIZE & LIMIT", analysisSize, null, analysisScaleDetail));
         return metrics;
     }
 
-    private JPanel metricCard(String title, JLabel mainValue, JComponent subComponent) {
+    private JPanel metricCard(String title, JLabel mainValue, JLabel rightBadge, JLabel bottomDetail) {
         JPanel card = DesktopTheme.cardPanel();
-        card.setLayout(new BorderLayout(0, 4));
+        card.setLayout(new BorderLayout(0, 2));
         card.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(DesktopTheme.LINE),
-                BorderFactory.createEmptyBorder(10, 14, 10, 14)));
+                BorderFactory.createEmptyBorder(1, 1, 1, 1),
+                BorderFactory.createEmptyBorder(8, 14, 8, 14)));
 
         JPanel topRow = new JPanel(new BorderLayout());
         topRow.setOpaque(false);
         topRow.add(DesktopTheme.label(title, 10, true, DesktopTheme.MUTED), BorderLayout.WEST);
-        if (subComponent instanceof JLabel badge && !badge.isOpaque()) {
-            topRow.add(subComponent, BorderLayout.EAST);
+        if (rightBadge != null) {
+            topRow.add(rightBadge, BorderLayout.EAST);
         }
-
         card.add(topRow, BorderLayout.NORTH);
+
+        mainValue.setFont(DesktopTheme.font(18, true));
         card.add(mainValue, BorderLayout.CENTER);
-        if (!(subComponent instanceof JLabel badge && !badge.isOpaque())) {
-            card.add(subComponent, BorderLayout.SOUTH);
+
+        if (bottomDetail != null) {
+            bottomDetail.setFont(DesktopTheme.font(11, false));
+            bottomDetail.setForeground(DesktopTheme.MUTED);
+            card.add(bottomDetail, BorderLayout.SOUTH);
         }
         return card;
     }
 
     private static JLabel metricValue(String text) {
-        return DesktopTheme.label(text, 22, true, DesktopTheme.INK);
+        return DesktopTheme.label(text, 18, true, DesktopTheme.INK);
     }
 
     private JPanel createSidebar() {
-        JPanel sidebar = new JPanel(new BorderLayout(0, 10));
+        JPanel sidebar = new JPanel(new BorderLayout(0, 8));
         sidebar.setOpaque(false);
-        sidebar.setPreferredSize(new Dimension(340, 500));
-        sidebar.setMinimumSize(new Dimension(280, 400));
+        sidebar.setPreferredSize(new Dimension(310, 500));
+        sidebar.setMinimumSize(new Dimension(270, 400));
 
         JPanel settingsPanel = new JPanel(new GridBagLayout());
         settingsPanel.setBackground(Color.WHITE);
-        settingsPanel.setBorder(BorderFactory.createEmptyBorder(16, 16, 16, 16));
+        settingsPanel.setBorder(BorderFactory.createEmptyBorder(12, 14, 12, 14));
 
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridx = 0;
@@ -260,67 +275,73 @@ public final class DetectorWorkspace extends JPanel {
         gbc.weightx = 1.0;
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.anchor = GridBagConstraints.NORTHWEST;
-        gbc.insets = new Insets(0, 0, 4, 0);
+        gbc.insets = new Insets(0, 0, 3, 0);
 
-        settingsPanel.add(DesktopTheme.label("DETECTION SENSITIVITY", 11, true, DesktopTheme.MUTED), gbc);
+        // Section 1: Thresholding
+        settingsPanel.add(DesktopTheme.label("DETECTION SENSITIVITY", 10, true, DesktopTheme.MUTED), gbc);
 
         gbc.gridy++;
-        gbc.insets = new Insets(0, 0, 3, 0);
-        settingsPanel.add(DesktopTheme.label("Threshold Method", 12, true, DesktopTheme.INK), gbc);
+        gbc.insets = new Insets(0, 0, 2, 0);
+        settingsPanel.add(DesktopTheme.label("Threshold Method", 11, true, DesktopTheme.INK), gbc);
+
         gbc.gridy++;
         gbc.insets = new Insets(0, 0, 8, 0);
-        methodCombo.setFont(DesktopTheme.font(12, true));
-        methodCombo.setPreferredSize(new Dimension(260, 32));
+        methodCombo.setFont(DesktopTheme.font(12, false));
+        methodCombo.setPreferredSize(new Dimension(240, 30));
         settingsPanel.add(methodCombo, gbc);
 
-        addSetting(settingsPanel, gbc, "Sensitivity Offset", sensitivity,
-                "Offset added to auto-threshold (-50 to +50; higher = detect more pixels).", -50, 50);
+        addSliderControl(settingsPanel, gbc, "Sensitivity Offset", sensitivity, sensitivityBadge,
+                "Manual offset added to auto-threshold (-50 to +50; higher = more pixels)", -50, 50, val -> String.format("%+d", val));
 
         gbc.gridy++;
-        gbc.insets = new Insets(6, 0, 12, 0);
+        gbc.insets = new Insets(4, 0, 10, 0);
         settingsPanel.add(createSeparator(), gbc);
+
+        // Section 2: Filtering
+        gbc.gridy++;
+        gbc.insets = new Insets(0, 0, 3, 0);
+        settingsPanel.add(DesktopTheme.label("REGION FILTERING", 10, true, DesktopTheme.MUTED), gbc);
+
+        addSliderControl(settingsPanel, gbc, "Minimum Particle Area", minArea, minAreaBadge,
+                "Rejects isolated speckles smaller than this size (pixels)", 2, 500, val -> val + " px");
+
+        addDoubleSliderControl(settingsPanel, gbc, "Maximum Circularity", maxCircularity, maxCircBadge,
+                "Filters out compact round spots (0.01 = thin line, 1.00 = circle)", 0.01, 1.00);
+
+        gbc.gridy++;
+        gbc.insets = new Insets(4, 0, 10, 0);
+        settingsPanel.add(createSeparator(), gbc);
+
+        // Section 3: Processing
+        gbc.gridy++;
+        gbc.insets = new Insets(0, 0, 3, 0);
+        settingsPanel.add(DesktopTheme.label("IMAGE ENHANCEMENT", 10, true, DesktopTheme.MUTED), gbc);
 
         gbc.gridy++;
         gbc.insets = new Insets(0, 0, 4, 0);
-        settingsPanel.add(DesktopTheme.label("REGION FILTERING", 11, true, DesktopTheme.MUTED), gbc);
-
-        addSetting(settingsPanel, gbc, "Minimum Particle Area", minArea,
-                "Rejects isolated speckles smaller than this size (pixels).", 2, 500);
-
-        addDoubleSetting(settingsPanel, gbc, "Maximum Circularity", maxCircularity,
-                "Filters out compact circular spots (0.01 = thin line, 1.0 = circle).", 0.01, 1.00);
-
-        gbc.gridy++;
-        gbc.insets = new Insets(6, 0, 12, 0);
-        settingsPanel.add(createSeparator(), gbc);
-
-        gbc.gridy++;
-        gbc.insets = new Insets(0, 0, 4, 0);
-        settingsPanel.add(DesktopTheme.label("PROCESSING & SCALING", 11, true, DesktopTheme.MUTED), gbc);
-
-        gbc.gridy++;
-        gbc.insets = new Insets(0, 0, 6, 0);
         correctLighting.setFont(DesktopTheme.font(12, false));
         correctLighting.setOpaque(false);
         correctLighting.setToolTipText("ImageJ rolling-ball background subtraction for uneven wall lighting");
         settingsPanel.add(correctLighting, gbc);
 
-        addSetting(settingsPanel, gbc, "Connect Small Gaps (Closing)", closingRadius,
-                "Morphological closing radius to bridge small hairline gaps (0–10 px).", 0, 10);
+        addSliderControl(settingsPanel, gbc, "Connect Small Gaps (Closing)", closingRadius, closingBadge,
+                "Morphological closing radius to bridge small hairline gaps (0 = off)", 0, 10, val -> val == 0 ? "Off" : val + " px");
 
-        addSetting(settingsPanel, gbc, "Analysis Size Limit", maxDimension,
-                "Resizes large photos down to this dimension limit (64–2000 px).", 64, 2000);
+        addSliderControl(settingsPanel, gbc, "Analysis Size Limit", maxDimension, maxDimBadge,
+                "Resizes large photos down to this dimension limit (64–2000 px)", 64, 2000, val -> val + " px");
 
+        // Spacer
         gbc.gridy++;
         gbc.weighty = 1.0;
         JPanel spacer = new JPanel();
         spacer.setOpaque(false);
         settingsPanel.add(spacer, gbc);
 
+        // Reset button
         gbc.gridy++;
         gbc.weighty = 0;
-        gbc.insets = new Insets(8, 0, 0, 0);
-        resetDefaultsButton.setPreferredSize(new Dimension(260, 34));
+        gbc.insets = new Insets(6, 0, 0, 0);
+        resetDefaultsButton.setPreferredSize(new Dimension(240, 32));
         settingsPanel.add(resetDefaultsButton, gbc);
 
         JScrollPane scroll = new JScrollPane(settingsPanel);
@@ -329,49 +350,59 @@ public final class DetectorWorkspace extends JPanel {
         scroll.getVerticalScrollBar().setUnitIncrement(16);
         sidebar.add(scroll, BorderLayout.CENTER);
 
+        // Legend card
         JPanel guideCard = DesktopTheme.cardPanel();
-        guideCard.setLayout(new GridLayout(0, 1, 0, 4));
+        guideCard.setLayout(new GridLayout(0, 1, 0, 3));
         guideCard.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(DesktopTheme.LINE),
-                BorderFactory.createEmptyBorder(10, 14, 10, 14)));
-        guideCard.setBackground(new Color(248, 250, 252));
+                BorderFactory.createEmptyBorder(1, 1, 1, 1),
+                BorderFactory.createEmptyBorder(8, 12, 8, 12)));
 
-        guideCard.add(DesktopTheme.label("VISUAL INSPECTION KEY", 11, true, DesktopTheme.INK));
+        guideCard.add(DesktopTheme.label("INSPECTION KEY", 10, true, DesktopTheme.MUTED));
         guideCard.add(DesktopTheme.label("●  Magenta: Candidate crack pixels", 11, false, DesktopTheme.OVERLAY_MAGENTA));
-        guideCard.add(DesktopTheme.label("□  Red: Candidate particle boundary", 11, false, new Color(220, 38, 38)));
+        guideCard.add(DesktopTheme.label("□  Red: Candidate bounding box", 11, false, new Color(220, 38, 38)));
         guideCard.add(DesktopTheme.label("□  Amber: Focused / Selected crack region", 11, false, DesktopTheme.WARNING));
-        guideCard.add(DesktopTheme.label("Double-click table row to zoom & center crack.", 10, false, DesktopTheme.MUTED));
 
         sidebar.add(guideCard, BorderLayout.SOUTH);
         return sidebar;
     }
 
     private JPanel createInspectionArea() {
-        JPanel area = new JPanel(new BorderLayout(0, 12));
+        JPanel area = new JPanel(new BorderLayout(0, 10));
         area.setOpaque(false);
 
         resultsCardPanel.add(overlay, "Highlighted Overlay");
         resultsCardPanel.add(mask, "Binary Mask");
-        viewMode.setFont(DesktopTheme.font(11, true));
-        viewMode.addActionListener(e -> viewCards.show(resultsCardPanel, (String) viewMode.getSelectedItem()));
 
-        JPanel originalCard = createPreviewCard("Original Photograph", fileInfo, original,
+        // Original image card
+        JPanel originalCard = createPreviewCard("Original Photograph", fileDimensionsBadge, original,
                 createZoomToolbar(original, originalZoomBadge));
-        JPanel resultCard = createPreviewCard("Detection Inspection",
-                DesktopTheme.label("Candidate pixels highlighted in magenta", 11, false, DesktopTheme.MUTED),
-                resultsCardPanel, createResultToolbar());
+
+        // Result inspection card with segmented view switcher
+        JPanel resultHeader = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
+        resultHeader.setOpaque(false);
+        overlayTabButton.setPreferredSize(new Dimension(136, 26));
+        maskTabButton.setPreferredSize(new Dimension(96, 26));
+        updateViewTabs();
+
+        overlayTabButton.addActionListener(e -> setViewMode("Highlighted Overlay"));
+        maskTabButton.addActionListener(e -> setViewMode("Binary Mask"));
+        resultHeader.add(overlayTabButton);
+        resultHeader.add(maskTabButton);
+
+        JPanel resultCard = createPreviewCardComponent(resultHeader, resultsCardPanel,
+                createZoomToolbar(overlay, resultZoomBadge));
 
         JSplitPane previewSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, originalCard, resultCard);
         previewSplit.setResizeWeight(0.5);
         previewSplit.setDividerLocation(0.5);
-        previewSplit.setDividerSize(10);
+        previewSplit.setDividerSize(8);
         previewSplit.setContinuousLayout(true);
         previewSplit.setBorder(BorderFactory.createEmptyBorder());
         previewSplit.setOpaque(false);
 
         JSplitPane verticalSplit = new JSplitPane(JSplitPane.VERTICAL_SPLIT, previewSplit, createTablePanel());
         verticalSplit.setResizeWeight(0.72);
-        verticalSplit.setDividerSize(10);
+        verticalSplit.setDividerSize(8);
         verticalSplit.setContinuousLayout(true);
         verticalSplit.setBorder(BorderFactory.createEmptyBorder());
         verticalSplit.setOpaque(false);
@@ -380,26 +411,33 @@ public final class DetectorWorkspace extends JPanel {
         return area;
     }
 
-    private JPanel createPreviewCard(String title, JLabel subtitle, JComponent content, JComponent headerActions) {
+    private void updateViewTabs() {
+        boolean isOverlay = "Highlighted Overlay".equals(activeViewMode);
+        overlayTabButton.setBackground(isOverlay ? DesktopTheme.BLUE : Color.WHITE);
+        overlayTabButton.setForeground(isOverlay ? Color.WHITE : DesktopTheme.INK);
+        maskTabButton.setBackground(!isOverlay ? DesktopTheme.BLUE : Color.WHITE);
+        maskTabButton.setForeground(!isOverlay ? Color.WHITE : DesktopTheme.INK);
+    }
+
+    private JPanel createPreviewCard(String title, JLabel badge, JComponent content, JComponent headerActions) {
+        JPanel headerLeft = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
+        headerLeft.setOpaque(false);
+        headerLeft.add(DesktopTheme.label(title, 12, true, DesktopTheme.INK));
+        if (badge != null) headerLeft.add(badge);
+        return createPreviewCardComponent(headerLeft, content, headerActions);
+    }
+
+    private JPanel createPreviewCardComponent(JComponent headerLeft, JComponent content, JComponent headerActions) {
         JPanel card = DesktopTheme.cardPanel();
         card.setLayout(new BorderLayout());
         card.setMinimumSize(new Dimension(240, 180));
 
-        JPanel header = new JPanel(new BorderLayout(8, 2));
+        JPanel header = new JPanel(new BorderLayout(8, 0));
         header.setOpaque(false);
-        header.setBorder(BorderFactory.createEmptyBorder(10, 14, 10, 14));
+        header.setBorder(BorderFactory.createEmptyBorder(6, 10, 6, 10));
 
-        JPanel titleBox = new JPanel(new GridLayout(0, 1, 0, 2));
-        titleBox.setOpaque(false);
-        titleBox.add(DesktopTheme.label(title, 13, true, DesktopTheme.INK));
-        subtitle.setFont(DesktopTheme.font(11, false));
-        subtitle.setForeground(DesktopTheme.MUTED);
-        titleBox.add(subtitle);
-        header.add(titleBox, BorderLayout.WEST);
-
-        if (headerActions != null) {
-            header.add(headerActions, BorderLayout.EAST);
-        }
+        if (headerLeft != null) header.add(headerLeft, BorderLayout.WEST);
+        if (headerActions != null) header.add(headerActions, BorderLayout.EAST);
 
         card.add(header, BorderLayout.NORTH);
         card.add(content, BorderLayout.CENTER);
@@ -407,7 +445,7 @@ public final class DetectorWorkspace extends JPanel {
     }
 
     private JPanel createZoomToolbar(ImagePanel panel, JLabel zoomBadge) {
-        JPanel toolbar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
+        JPanel toolbar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 3, 0));
         toolbar.setOpaque(false);
 
         JButton zoomOut = DesktopTheme.iconButton("−", "Zoom Out");
@@ -430,38 +468,30 @@ public final class DetectorWorkspace extends JPanel {
         return toolbar;
     }
 
-    private JPanel createResultToolbar() {
-        JPanel toolbar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
-        toolbar.setOpaque(false);
-        toolbar.add(viewMode);
-        toolbar.add(createZoomToolbar(overlay, resultZoomBadge));
-        return toolbar;
-    }
-
     private JPanel createTablePanel() {
         JPanel panel = DesktopTheme.cardPanel();
         panel.setLayout(new BorderLayout());
         panel.setMinimumSize(new Dimension(300, 140));
-        panel.setPreferredSize(new Dimension(600, 180));
+        panel.setPreferredSize(new Dimension(600, 170));
 
         JPanel heading = new JPanel(new BorderLayout(12, 0));
         heading.setOpaque(false);
-        heading.setBorder(BorderFactory.createEmptyBorder(10, 14, 10, 14));
-        heading.add(DesktopTheme.label("Candidate Region Measurements", 13, true, DesktopTheme.INK), BorderLayout.WEST);
+        heading.setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
+        heading.add(DesktopTheme.label("Candidate Region Measurements", 12, true, DesktopTheme.INK), BorderLayout.WEST);
 
         summary.setFont(DesktopTheme.font(11, false));
         summary.setForeground(DesktopTheme.MUTED);
         heading.add(summary, BorderLayout.CENTER);
 
         JButton copyCsvButton = DesktopTheme.iconButton("Copy CSV", "Copy table contents to clipboard as CSV");
-        copyCsvButton.setPreferredSize(new Dimension(80, 28));
+        copyCsvButton.setPreferredSize(new Dimension(80, 26));
         copyCsvButton.addActionListener(e -> copyTableCsv());
         heading.add(copyCsvButton, BorderLayout.EAST);
         panel.add(heading, BorderLayout.NORTH);
 
         regionTable.setAutoCreateRowSorter(true);
         regionTable.setFillsViewportHeight(true);
-        regionTable.setRowHeight(32);
+        regionTable.setRowHeight(28);
         regionTable.setShowVerticalLines(false);
         regionTable.setGridColor(DesktopTheme.LINE);
         regionTable.setIntercellSpacing(new Dimension(0, 1));
@@ -471,7 +501,7 @@ public final class DetectorWorkspace extends JPanel {
         regionTable.getTableHeader().setFont(DesktopTheme.font(11, true));
         regionTable.getTableHeader().setBackground(new Color(248, 250, 252));
         regionTable.getTableHeader().setForeground(DesktopTheme.MUTED);
-        regionTable.getTableHeader().setPreferredSize(new Dimension(100, 32));
+        regionTable.getTableHeader().setPreferredSize(new Dimension(100, 28));
         regionTable.getTableHeader().setReorderingAllowed(false);
 
         DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
@@ -554,12 +584,12 @@ public final class DetectorWorkspace extends JPanel {
     private JPanel createStatusBar() {
         JPanel bar = new JPanel(new BorderLayout(12, 0));
         bar.setOpaque(false);
-        bar.setBorder(BorderFactory.createEmptyBorder(6, 4, 2, 4));
+        bar.setBorder(BorderFactory.createEmptyBorder(4, 4, 2, 4));
 
         JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
         left.setOpaque(false);
         statusDot.setForeground(DesktopTheme.SUCCESS);
-        status.setFont(DesktopTheme.font(12, false));
+        status.setFont(DesktopTheme.font(11, false));
         status.setForeground(DesktopTheme.MUTED);
         left.add(statusDot);
         left.add(status);
@@ -574,7 +604,7 @@ public final class DetectorWorkspace extends JPanel {
 
         JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         right.setOpaque(false);
-        progress.setPreferredSize(new Dimension(120, 6));
+        progress.setPreferredSize(new Dimension(100, 5));
         progress.setVisible(false);
         right.add(progress);
         bar.add(right, BorderLayout.EAST);
@@ -633,6 +663,7 @@ public final class DetectorWorkspace extends JPanel {
     }
 
     private void configureDragAndDrop() {
+        if (java.awt.GraphicsEnvironment.isHeadless()) return;
         DropTargetAdapter dropAdapter = new DropTargetAdapter() {
             @Override
             public void drop(DropTargetDropEvent event) {
@@ -676,8 +707,8 @@ public final class DetectorWorkspace extends JPanel {
         runTask("Loading photograph...", () -> ImageFiles.read(file), image -> {
             source = image;
             original.setImage(image);
-            fileInfo.setText(file.getFileName() + "  ·  " + image.getWidth() + " × " + image.getHeight() + " px");
-            fileInfo.setToolTipText(file.toAbsolutePath().toString());
+            fileDimensionsBadge.setText(image.getWidth() + " × " + image.getHeight() + " px");
+            fileDimensionsBadge.setToolTipText(file.toAbsolutePath().toString());
             invalidateAnalysis();
             statusDot.setForeground(DesktopTheme.SUCCESS);
             status.setText("Loaded " + file.getFileName() + " (" + image.getWidth() + " × " + image.getHeight() + " px). Ready for analysis.");
@@ -744,23 +775,27 @@ public final class DetectorWorkspace extends JPanel {
             }
 
             int count = result.regions().size();
-            regionCount.setText(Integer.toString(count));
+            regionCount.setText(count == 1 ? "1 region" : count + " regions");
             if (count == 0) {
-                regionBadge.setText("NONE FOUND");
-                regionBadge.setForeground(DesktopTheme.MUTED);
+                regionBadge.setText("0 / CLEAN");
+                regionBadge.setForeground(DesktopTheme.SUCCESS);
+                regionBadge.setBackground(new Color(236, 253, 245));
+                regionDetail.setText("No candidates found");
                 maxSpanMetric.setText("0.0 px");
             } else {
                 regionBadge.setText("REVIEW");
                 regionBadge.setForeground(DesktopTheme.BLUE);
+                regionBadge.setBackground(new Color(238, 242, 255));
+                regionDetail.setText(count == 1 ? "1 connected crack" : count + " connected cracks");
                 maxSpanMetric.setText(String.format(Locale.ROOT, "%.1f px", maxSpan));
             }
 
             coverage.setText(String.format(Locale.ROOT, "%.3f%%", result.coveragePercent()));
-            coverageDetail.setText(String.format(Locale.ROOT, "%d candidate px", result.candidatePixels()));
+            coverageDetail.setText(String.format(Locale.ROOT, "%,d candidate pixels", result.candidatePixels()));
 
-            analysisSize.setText(result.width() + " × " + result.height());
+            analysisSize.setText(result.width() + " × " + result.height() + " px");
             double scale = (double) result.width() / result.originalWidth();
-            analysisScaleDetail.setText(String.format(Locale.ROOT, "Scale: %.2f × Orig | Threshold: %d",
+            analysisScaleDetail.setText(String.format(Locale.ROOT, "Scale: %.2f × | Auto-threshold: %d",
                     scale, result.effectiveThreshold()));
 
             summary.setText(count == 0 ? "No candidates found with current settings"
@@ -860,7 +895,8 @@ public final class DetectorWorkspace extends JPanel {
      * @param mode inspection view mode name
      */
     public void setViewMode(String mode) {
-        viewMode.setSelectedItem(mode);
+        this.activeViewMode = mode;
+        updateViewTabs();
         viewCards.show(resultsCardPanel, mode);
     }
 
@@ -946,11 +982,12 @@ public final class DetectorWorkspace extends JPanel {
         regionBadge.setText("IDLE");
         regionBadge.setForeground(DesktopTheme.MUTED);
         regionBadge.setBackground(new Color(241, 245, 249));
+        regionDetail.setText("Waiting for analysis");
         coverage.setText("—");
         coverageDetail.setText("0 pixels flagged");
         maxSpanMetric.setText("—");
         analysisSize.setText("—");
-        analysisScaleDetail.setText(source != null ? source.getWidth() + " × " + source.getHeight() + " px loaded" : "No active image");
+        analysisScaleDetail.setText(source != null ? source.getWidth() + " × " + source.getHeight() + " px loaded" : "Analysis limit: 1600 px");
         if (source != null) {
             statusDot.setForeground(DesktopTheme.WARNING);
             status.setText("Parameters modified. Click 'Analyze Wall' to update results.");
@@ -991,87 +1028,90 @@ public final class DetectorWorkspace extends JPanel {
         return sep;
     }
 
-    private static void addSetting(JPanel panel, GridBagConstraints gbc,
-                                   String label, JSpinner spinner, String description,
-                                   int sliderMin, int sliderMax) {
+    private static void addSliderControl(JPanel panel, GridBagConstraints gbc,
+                                         String label, JSpinner spinner, JLabel badge,
+                                         String tooltip, int min, int max,
+                                         java.util.function.IntFunction<String> formatter) {
         gbc.gridy++;
-        gbc.insets = new Insets(0, 0, 3, 0);
-        JLabel caption = DesktopTheme.label(label, 12, true, DesktopTheme.INK);
-        caption.setLabelFor(spinner);
-        panel.add(caption, gbc);
+        gbc.insets = new Insets(0, 0, 2, 0);
+
+        JPanel headerRow = new JPanel(new BorderLayout());
+        headerRow.setOpaque(false);
+        JLabel caption = DesktopTheme.label(label, 11, true, DesktopTheme.INK);
+        caption.setToolTipText(tooltip);
+        headerRow.add(caption, BorderLayout.WEST);
+        headerRow.add(badge, BorderLayout.EAST);
+        panel.add(headerRow, gbc);
 
         gbc.gridy++;
-        gbc.insets = new Insets(0, 0, 4, 0);
+        gbc.insets = new Insets(0, 0, 6, 0);
 
-        JPanel inputRow = new JPanel(new BorderLayout(8, 0));
-        inputRow.setOpaque(false);
-
-        spinner.setToolTipText(description);
-        spinner.setPreferredSize(new Dimension(80, 32));
-        var editor = new JSpinner.NumberEditor(spinner, "0");
-        spinner.setEditor(editor);
-        editor.getTextField().setFont(DesktopTheme.font(13, false));
-        editor.getTextField().setHorizontalAlignment(JLabel.CENTER);
-
-        JSlider slider = new JSlider(sliderMin, sliderMax, value(spinner));
+        JSlider slider = new JSlider(min, max, value(spinner));
         slider.setOpaque(false);
+        slider.setToolTipText(tooltip);
+
+        badge.setText(formatter.apply(value(spinner)));
+
         slider.addChangeListener(e -> {
-            if (slider.getValueIsAdjusting()) spinner.setValue(slider.getValue());
+            int v = slider.getValue();
+            spinner.setValue(v);
+            badge.setText(formatter.apply(v));
         });
+
         spinner.addChangeListener(e -> {
             int v = value(spinner);
-            if (v >= sliderMin && v <= sliderMax && slider.getValue() != v) slider.setValue(v);
+            if (v >= min && v <= max && slider.getValue() != v) {
+                slider.setValue(v);
+            }
+            badge.setText(formatter.apply(v));
         });
 
-        inputRow.add(slider, BorderLayout.CENTER);
-        inputRow.add(spinner, BorderLayout.EAST);
-        panel.add(inputRow, gbc);
-
-        gbc.gridy++;
-        gbc.insets = new Insets(0, 0, 8, 0);
-        panel.add(DesktopTheme.label(description, 10, false, DesktopTheme.MUTED), gbc);
+        panel.add(slider, gbc);
     }
 
-    private static void addDoubleSetting(JPanel panel, GridBagConstraints gbc,
-                                         String label, JSpinner spinner, String description,
-                                         double sliderMin, double sliderMax) {
+    private static void addDoubleSliderControl(JPanel panel, GridBagConstraints gbc,
+                                               String label, JSpinner spinner, JLabel badge,
+                                               String tooltip, double min, double max) {
         gbc.gridy++;
-        gbc.insets = new Insets(0, 0, 3, 0);
-        JLabel caption = DesktopTheme.label(label, 12, true, DesktopTheme.INK);
-        caption.setLabelFor(spinner);
-        panel.add(caption, gbc);
+        gbc.insets = new Insets(0, 0, 2, 0);
+
+        JPanel headerRow = new JPanel(new BorderLayout());
+        headerRow.setOpaque(false);
+        JLabel caption = DesktopTheme.label(label, 11, true, DesktopTheme.INK);
+        caption.setToolTipText(tooltip);
+        headerRow.add(caption, BorderLayout.WEST);
+        headerRow.add(badge, BorderLayout.EAST);
+        panel.add(headerRow, gbc);
 
         gbc.gridy++;
-        gbc.insets = new Insets(0, 0, 4, 0);
+        gbc.insets = new Insets(0, 0, 6, 0);
 
-        JPanel inputRow = new JPanel(new BorderLayout(8, 0));
-        inputRow.setOpaque(false);
+        int minInt = (int) Math.round(min * 100);
+        int maxInt = (int) Math.round(max * 100);
+        int initialInt = (int) Math.round(((Number) spinner.getValue()).doubleValue() * 100);
 
-        spinner.setToolTipText(description);
-        spinner.setPreferredSize(new Dimension(80, 32));
-        var editor = new JSpinner.NumberEditor(spinner, "0.00");
-        spinner.setEditor(editor);
-        editor.getTextField().setFont(DesktopTheme.font(13, false));
-        editor.getTextField().setHorizontalAlignment(JLabel.CENTER);
-
-        int intVal = (int) Math.round(((Number) spinner.getValue()).doubleValue() * 100);
-        JSlider slider = new JSlider((int) (sliderMin * 100), (int) (sliderMax * 100), intVal);
+        JSlider slider = new JSlider(minInt, maxInt, initialInt);
         slider.setOpaque(false);
+        slider.setToolTipText(tooltip);
+
+        badge.setText(String.format(Locale.ROOT, "%.2f", ((Number) spinner.getValue()).doubleValue()));
+
         slider.addChangeListener(e -> {
-            if (slider.getValueIsAdjusting()) spinner.setValue(slider.getValue() / 100.0);
+            double v = slider.getValue() / 100.0;
+            spinner.setValue(v);
+            badge.setText(String.format(Locale.ROOT, "%.2f", v));
         });
+
         spinner.addChangeListener(e -> {
-            int v = (int) Math.round(((Number) spinner.getValue()).doubleValue() * 100);
-            if (slider.getValue() != v) slider.setValue(v);
+            double v = ((Number) spinner.getValue()).doubleValue();
+            int intVal = (int) Math.round(v * 100);
+            if (slider.getValue() != intVal) {
+                slider.setValue(intVal);
+            }
+            badge.setText(String.format(Locale.ROOT, "%.2f", v));
         });
 
-        inputRow.add(slider, BorderLayout.CENTER);
-        inputRow.add(spinner, BorderLayout.EAST);
-        panel.add(inputRow, gbc);
-
-        gbc.gridy++;
-        gbc.insets = new Insets(0, 0, 8, 0);
-        panel.add(DesktopTheme.label(description, 10, false, DesktopTheme.MUTED), gbc);
+        panel.add(slider, gbc);
     }
 
     private record AnalysisViews(DetectionResult result, BufferedImage overlay, BufferedImage mask) { }
