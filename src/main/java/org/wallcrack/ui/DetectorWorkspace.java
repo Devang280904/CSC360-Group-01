@@ -1063,7 +1063,9 @@ public final class DetectorWorkspace extends JPanel {
     private void showError(String message) {
         statusDot.setForeground(DesktopTheme.DANGER);
         status.setText("Operation failed: " + message);
-        JOptionPane.showMessageDialog(this, message, "Wall Crack Detector", JOptionPane.ERROR_MESSAGE);
+        if (!java.awt.GraphicsEnvironment.isHeadless()) {
+            JOptionPane.showMessageDialog(this, message, "Wall Crack Detector", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     private static JSpinner spinner(int initial, int min, int max) {

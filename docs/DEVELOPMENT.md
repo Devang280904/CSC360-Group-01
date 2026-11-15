@@ -11,13 +11,13 @@ bash scripts/javadoc.sh
 git diff --check
 ```
 
-Scripts use UTF-8, `--release 17`, strict compiler and Javadoc checks, and fail on
-warnings. The test script compiles sources and runs `org.wallcrack.AnalysisTestSuite`
-headlessly. Temporary test files are cleaned up after the suite completes.
+Scripts use UTF-8, `--release 17`, strict compiler and Javadoc checks. The test
+script runs JUnit 5 headlessly, packages the app, and enforces the JaCoCo coverage
+baseline. Temporary files are cleaned up. Open `target/site/jacoco/index.html`
+for the detailed coverage report.
 
-Maven alternatives are `mvn test` and `mvn package`. The Exec Maven Plugin runs
-the regression suite in the `test` phase. Look for `PASS: 20 regression tests.`
-and build success.
+Use `mvn test` for a quick run or `mvn verify` for the full coverage gate. Look
+for `PASS: 27 regression tests.`, two successful JUnit tests, and build success.
 
 ## Regression coverage
 
@@ -25,13 +25,15 @@ and build success.
 | --- | --- |
 | Detections | Vertical, diagonal, separate, and edge-touching candidates |
 | Rejections | Uniform surfaces, isolated noise, compact patches, smooth gradients |
-| Parameters | Sensitivity offset, minimum area, maximum circularity, invalid configuration |
+| Parameters | Triangle/Otsu, sensitivity, lighting correction, closing, area, circularity, invalid configuration |
 | Input | Tiny images, alpha composite, resizing, PNG decoding, unsupported/missing files |
 | Integrity | Defensive copies, immutable snapshots, unchanged source, cancellation |
 | Exports | Pixel counts, CSV/JSON metadata, locale independence, empty results, no overwrite |
-| Application | CLI success/errors, obsolete option rejection, and headless Swing preview painting |
+| Application | CLI modes, bundled samples, desktop state transitions, active-view zoom, and Swing painting |
 
 The regression tests verify software behavior and implementation stability, not field accuracy.
+Use `bash scripts/evaluate.sh` after adding labelled photographs as described in
+`evaluation/README.md` to measure dataset-specific field performance.
 
 ## Manual desktop checks
 

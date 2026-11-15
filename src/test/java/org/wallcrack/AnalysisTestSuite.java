@@ -36,6 +36,7 @@ public final class AnalysisTestSuite {
      * @throws Exception on a test failure
      */
     public static void main(String[] args) throws Exception {
+        passed = 0;
         System.setProperty("java.awt.headless", "true");
         test("uniform wall has no candidates", () -> check(detect(SampleImages.blank()).regions().isEmpty(), "blank wall"));
         test("vertical crack is located and measured", () -> {
@@ -90,6 +91,36 @@ public final class AnalysisTestSuite {
             var stricter = new DetectionConfig("Triangle", -15, 30, 0.50, false, 0, 1600);
             check(!new CrackDetector().detect(image, standard).regions().isEmpty(), "standard threshold accepts faint line");
             check(new CrackDetector().detect(image, stricter).regions().isEmpty(), "stricter threshold rejects faint line");
+        });
+        test("Otsu thresholding detects a high-contrast crack", () -> {
+            var config = new DetectionConfig("Otsu", 0, 30, 0.50, false, 0, 1600);
+            check(new CrackDetector().detect(SampleImages.verticalCrack(), config).regions().size() == 1, "Otsu region");
+        });
+        test("lighting correction processes uneven illumination", () -> {
+            var image = SampleImages.verticalCrack();
+            var config = new DetectionConfig("Triangle", 0, 30, 0.50, true, 0, 1600);
+            var result = new CrackDetector().detect(image, config);
+            check(result.width() == image.getWidth() && result.height() == image.getHeight(), "corrected dimensions");
+            check(result.config().correctLighting(), "lighting setting retained");
+        });
+        test("morphological closing connects a small line gap", () -> {
+            var image = SampleImages.blank();
+            for (int y = 30; y < 100; y++) image.setRGB(150, y, 0);
+            for (int y = 103; y < 180; y++) image.setRGB(150, y, 0);
+            var open = new CrackDetector().detect(image, new DetectionConfig("Triangle", 0, 20, 0.50, false, 0, 1600));
+            var closed = new CrackDetector().detect(image, new DetectionConfig("Triangle", 0, 20, 0.50, false, 2, 1600));
+            check(open.regions().size() == 2, "unclosed segments");
+            check(closed.regions().size() == 1, "closed segment");
+        });
+        test("candidate insights cover horizontal and diagonal marks", () -> {
+            var horizontal = SampleImages.blank();
+            for (int x = 40; x < 240; x++) for (int y = 110; y < 114; y++) horizontal.setRGB(x, y, 0);
+            var horizontalResult = detect(horizontal);
+            check(horizontalResult.regions().get(0).orientation().equals("Horizontal"), "horizontal orientation");
+            check(Math.abs(horizontalResult.maximumEstimatedThickness() - 4.0) < 0.001, "maximum thickness");
+            var diagonal = SampleImages.blank();
+            for (int i = 40; i < 180; i++) diagonal.setRGB(i, i, 0);
+            check(detect(diagonal).regions().get(0).orientation().equals("Diagonal / mixed"), "diagonal orientation");
         });
         test("edge cracks do not wrap rows", () -> {
             var image = SampleImages.blank();
@@ -150,6 +181,21 @@ public final class AnalysisTestSuite {
                 expect(IOException.class, () -> ImageFiles.read(invalid));
                 expect(IOException.class, () -> ImageFiles.read(temporary.resolve("missing.png")));
             });
+            test("bundled sample resources decode", () -> {
+                try (var stream = AnalysisTestSuite.class.getResourceAsStream("/samples/wall-cracked.png")) {
+                    var image = ImageFiles.read(stream, "bundled cracked sample");
+                    check(image.getWidth() > 0 && image.getHeight() > 0, "sample dimensions");
+                }
+            });
+            test("field evaluation consumes labelled image manifests", () -> {
+                Path fieldImages = temporary.resolve("field-images");
+                Files.createDirectories(fieldImages);
+                ImageIO.write(SampleImages.verticalCrack(), "png", fieldImages.resolve("present.png").toFile());
+                ImageIO.write(SampleImages.blank(), "png", fieldImages.resolve("absent.png").toFile());
+                Path labels = temporary.resolve("labels.csv");
+                Files.writeString(labels, "file,expected,notes\npresent.png,present,test\nabsent.png,absent,test\n");
+                FieldEvaluation.main(new String[]{labels.toString(), fieldImages.toString()});
+            });
             test("exports contain consistent masks and numeric reports", () -> {
                 var result = detect(SampleImages.verticalCrack());
                 Path output = temporary.resolve("exports");
@@ -201,6 +247,14 @@ public final class AnalysisTestSuite {
                     check(CommandLine.run(new String[]{"--input", "x", "--sensitivity", "abc"}, stream, stream) == 2, "not integer");
                     check(CommandLine.run(new String[]{"--input", "x", "--sensitivity", "51"}, stream, stream) == 2, "out of range");
                     check(CommandLine.run(new String[]{"--input", "x", "--correct-lighting", "maybe"}, stream, stream) == 2, "invalid boolean");
+                    Path flagOutput = temporary.resolve("cli-lighting-flag");
+                    check(CommandLine.run(new String[]{"--input", temporary.resolve("wall.png").toString(),
+                            "--output", flagOutput.toString(), "--correct-lighting"}, stream, stream) == 0, "boolean flag");
+                    Path optionsOutput = temporary.resolve("cli-options");
+                    check(CommandLine.run(new String[]{"--input", temporary.resolve("wall.png").toString(),
+                            "--output", optionsOutput.toString(), "--method", "Otsu", "--correct-lighting", "false",
+                            "--closing", "1", "--max-dimension", "200"}, stream, stream) == 0, "parameter options");
+                    check(bytes.toString(StandardCharsets.UTF_8).contains("Widest estimated candidate"), "CLI insights");
                     check(CommandLine.run(new String[]{"--input", "x", "--threshold", "14"}, stream, stream) == 2, "obsolete flag rejected");
                 }
             });

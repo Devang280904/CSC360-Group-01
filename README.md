@@ -179,8 +179,9 @@ bash scripts/test.sh
 bash scripts/javadoc.sh
 ```
 
-Open `build/docs/index.html` for API documentation. Both scripts treat warnings as errors.
-`mvn test` runs the 20 regression tests through the Exec Maven Plugin.
+Open `target/site/jacoco/index.html` for coverage and `build/docs/index.html` for
+API documentation. `mvn test` runs JUnit quickly; `mvn verify` also enforces the
+coverage baseline. Field-image evaluation is documented in `evaluation/README.md`.
 
 ## Limitations and future work
 
