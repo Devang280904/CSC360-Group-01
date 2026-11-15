@@ -382,8 +382,8 @@ public final class ImagePanel extends JPanel {
         public void mouseDragged(MouseEvent event) {
             if (image == null || dragOrigin == null) return;
             if (autoFit) {
-                autoFit = false;
                 double scale = getZoomScale();
+                autoFit = false;
                 panX = (getWidth() - image.getWidth() * scale) / 2.0;
                 panY = (getHeight() - image.getHeight() * scale) / 2.0;
                 zoomScale = scale;

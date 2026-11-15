@@ -390,7 +390,7 @@ public final class DetectorWorkspace extends JPanel {
         resultHeader.add(maskTabButton);
 
         JPanel resultCard = createPreviewCardComponent(resultHeader, resultsCardPanel,
-                createZoomToolbar(overlay, resultZoomBadge));
+                createResultZoomToolbar());
 
         JSplitPane previewSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, originalCard, resultCard);
         previewSplit.setResizeWeight(0.5);
@@ -466,6 +466,35 @@ public final class DetectorWorkspace extends JPanel {
         toolbar.add(actualSize);
         toolbar.add(fit);
         return toolbar;
+    }
+
+    private JPanel createResultZoomToolbar() {
+        JPanel toolbar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 3, 0));
+        toolbar.setOpaque(false);
+        JButton zoomOut = DesktopTheme.iconButton("−", "Zoom Out");
+        JButton zoomIn = DesktopTheme.iconButton("+", "Zoom In");
+        JButton actualSize = DesktopTheme.iconButton("1:1", "Actual Size 100%");
+        JButton fit = DesktopTheme.iconButton("Fit", "Reset to Fit Window");
+        zoomOut.addActionListener(e -> activeResultPanel().zoomOut());
+        zoomIn.addActionListener(e -> activeResultPanel().zoomIn());
+        actualSize.addActionListener(e -> activeResultPanel().actualSize());
+        fit.addActionListener(e -> activeResultPanel().resetZoom());
+        overlay.setZoomChangeListener(percentage -> updateResultZoomBadge());
+        mask.setZoomChangeListener(percentage -> updateResultZoomBadge());
+        toolbar.add(zoomOut);
+        toolbar.add(resultZoomBadge);
+        toolbar.add(zoomIn);
+        toolbar.add(actualSize);
+        toolbar.add(fit);
+        return toolbar;
+    }
+
+    private ImagePanel activeResultPanel() {
+        return "Binary Mask".equals(activeViewMode) ? mask : overlay;
+    }
+
+    private void updateResultZoomBadge() {
+        resultZoomBadge.setText(activeResultPanel().getZoomPercentage() + "%");
     }
 
     private JPanel createTablePanel() {
@@ -905,32 +934,34 @@ public final class DetectorWorkspace extends JPanel {
      * @param mode inspection view mode name
      */
     public void setViewMode(String mode) {
+        if (!"Highlighted Overlay".equals(mode) && !"Binary Mask".equals(mode)) return;
         this.activeViewMode = mode;
         updateViewTabs();
         viewCards.show(resultsCardPanel, mode);
+        updateResultZoomBadge();
     }
 
     /** Zooms in on previews. */
     public void zoomIn() {
-        overlay.zoomIn();
+        activeResultPanel().zoomIn();
         original.zoomIn();
     }
 
     /** Zooms out on previews. */
     public void zoomOut() {
-        overlay.zoomOut();
+        activeResultPanel().zoomOut();
         original.zoomOut();
     }
 
     /** Resets zoom to fit window on previews. */
     public void resetZoom() {
-        overlay.resetZoom();
+        activeResultPanel().resetZoom();
         original.resetZoom();
     }
 
     /** Sets magnification to 1:1 actual pixels on previews. */
     public void actualSize() {
-        overlay.actualSize();
+        activeResultPanel().actualSize();
         original.actualSize();
     }
 

@@ -1,6 +1,7 @@
 package org.wallcrack;
 
 import java.awt.Graphics2D;
+import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -209,6 +210,16 @@ public final class AnalysisTestSuite {
                     panel.paint(graphics);
                     check((canvas.getRGB(150, 100) & 0xFFFFFF) != 0, "preview painted");
                 } finally { graphics.dispose(); }
+            }));
+            test("panning a fitted preview preserves its scale", () -> SwingUtilities.invokeAndWait(() -> {
+                var panel = new ImagePanel("preview");
+                panel.setSize(300, 200);
+                panel.setImage(SampleImages.solid(1000, 500, 220));
+                int fittedZoom = panel.getZoomPercentage();
+                panel.dispatchEvent(new MouseEvent(panel, MouseEvent.MOUSE_PRESSED, 1, 0, 150, 100, 1, false, MouseEvent.BUTTON1));
+                panel.dispatchEvent(new MouseEvent(panel, MouseEvent.MOUSE_DRAGGED, 2, 0, 160, 110, 0, false, MouseEvent.BUTTON1));
+                panel.dispatchEvent(new MouseEvent(panel, MouseEvent.MOUSE_RELEASED, 3, 0, 160, 110, 1, false, MouseEvent.BUTTON1));
+                check(panel.getZoomPercentage() == fittedZoom, "drag must not jump from fit scale to 100%");
             }));
         } finally {
             try (var paths = Files.walk(temporary)) {
