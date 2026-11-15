@@ -98,3 +98,64 @@ Below is the simple 7-step flow of how an image moves through the system from st
 
 7. **Step 7 - UI Display & Report Generation**:  
    The accepted cracks are marked on the photo with magenta overlay and red bounding boxes. All numbers are displayed in the results table, ready to export into CSV, JSON, and PNG files.
+
+---
+
+## How to Run the Project
+
+### Requirements
+- **Java JDK 17 or higher** installed on your computer
+- **Maven 3.9+** (optional, pre-built executable JAR is already included)
+
+### Easy Way (Windows):
+Simply double-click the **`run.bat`** file in the root folder to launch the desktop application.
+
+### From Terminal (Command Prompt / PowerShell):
+To open the desktop interface:
+```powershell
+java -jar build/wall-crack-detector.jar
+```
+
+To run detection on an image from command line without opening a window:
+```powershell
+java -jar build/wall-crack-detector.jar --input samples/wall-cracked.png --output output/results
+```
+
+---
+
+## Project Folder Structure
+
+Here is how the project files and folders are arranged:
+
+```text
+CSC360-Group-01/
+├── docs/                               # Project documentation and pictures
+│   ├── images/                         # Application screenshots
+│   │   ├── demo.jpeg                   # Result overlay demo screenshot
+│   │   └── sample UI.jpeg              # Desktop application user interface screenshot
+│   ├── ARCHITECTURE.md                 # Technical design documentation
+│   └── DEVELOPMENT.md                  # Development setup guide
+├── evaluation/                         # Evaluation datasets and scripts
+│   ├── labels.csv                      # Test labels
+│   └── README.md                       # Field evaluation instructions
+├── samples/                            # Sample wall photos for instant testing
+│   ├── wall-clean.png                  # Clean wall photo without cracks
+│   └── wall-cracked.png                # Wall photo containing a crack
+├── scripts/                            # Helper shell scripts
+│   ├── build.sh                        # Builds the executable shaded JAR
+│   ├── evaluate.sh                     # Runs field evaluation tests
+│   ├── javadoc.sh                      # Generates Java API documentation
+│   └── test.sh                         # Runs all unit tests
+├── src/                                # Main Java source code
+│   ├── main/java/org/wallcrack/        # Application source files
+│   │   ├── app/                        # Application entry point (Main.java)
+│   │   ├── cli/                        # Terminal commands (CommandLine.java)
+│   │   ├── detection/                  # Detection algorithm (CrackDetector.java)
+│   │   ├── io/                         # File loading and exporting
+│   │   ├── model/                      # Data models and configurations
+│   │   └── ui/                         # Swing UI components (Frame, Workspace, Panel)
+│   └── test/java/org/wallcrack/        # JUnit regression test suite
+├── pom.xml                             # Maven build and dependencies file
+├── run.bat                             # One-click Windows launcher
+└── README.md                           # Main project guide (this file)
+```
