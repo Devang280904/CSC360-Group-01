@@ -44,6 +44,8 @@ public final class AnalysisTestSuite {
             var region = result.regions().get(0);
             check(region.x() == 158 && region.y() == 35 && region.width() == 3 && region.height() == 170, "bounds");
             check(region.pixelCount() == 510 && result.candidatePixels() == 510, "mask area");
+            check(Math.abs(region.estimatedThickness() - 3.0) < 0.001, "estimated thickness");
+            check(region.orientation().equals("Vertical"), "orientation");
             check(region.circularity() > 0.0 && region.circularity() < 0.25, "circularity");
             check(result.isCandidate(159, 100) && !result.isCandidate(20, 20), "mask positions");
         });
@@ -170,6 +172,8 @@ public final class AnalysisTestSuite {
                 String json = Files.readString(output.resolve("report.json"));
                 check(json.contains("\"candidateCount\": 1") && json.contains("\"coveragePercent\": 0.664063"), "JSON measurements");
                 check(json.contains("\"schemaVersion\": 2") && json.contains("\"effectiveThreshold\":"), "JSON schema v2");
+                check(json.contains("\"maximumEstimatedThicknessPixels\": 3.000")
+                        && json.contains("\"orientation\": \"Vertical\""), "JSON candidate insights");
                 byte[] before = Files.readAllBytes(output.resolve("overlay.png"));
                 expect(IOException.class, () -> ReportExporter.export(result, output));
                 check(java.util.Arrays.equals(before, Files.readAllBytes(output.resolve("overlay.png"))), "no overwrite");

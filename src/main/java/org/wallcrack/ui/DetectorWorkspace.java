@@ -115,7 +115,7 @@ public final class DetectorWorkspace extends JPanel {
     private final JLabel coverage = metricValue("—");
     private final JLabel coverageDetail = DesktopTheme.label("0 pixels flagged", 11, false, DesktopTheme.MUTED);
     private final JLabel maxSpanMetric = metricValue("—");
-    private final JLabel maxSpanDetail = DesktopTheme.label("Bounding-box diagonal", 11, false, DesktopTheme.MUTED);
+    private final JLabel maxSpanDetail = DesktopTheme.label("Estimated in analysis pixels", 11, false, DesktopTheme.MUTED);
     private final JLabel analysisSize = metricValue("—");
     private final JLabel analysisScaleDetail = DesktopTheme.label("Analysis limit: 1600 px", 11, false, DesktopTheme.MUTED);
     private final JProgressBar progress = new JProgressBar();
@@ -123,7 +123,7 @@ public final class DetectorWorkspace extends JPanel {
 
     // Region measurements table
     private final DefaultTableModel table = new DefaultTableModel(
-            new Object[]{"ID", "X (px)", "Y (px)", "Width (px)", "Height (px)", "Pixels", "Box diagonal (px)", "Circularity"}, 0) {
+            new Object[]{"ID", "X (px)", "Y (px)", "Width (px)", "Height (px)", "Pixels", "Box diagonal (px)", "Circularity", "Est. thickness (px)", "Orientation"}, 0) {
         private static final long serialVersionUID = 1L;
 
         @Override
@@ -135,7 +135,7 @@ public final class DetectorWorkspace extends JPanel {
         public Class<?> getColumnClass(int column) {
             return switch (column) {
                 case 0, 1, 2, 3, 4, 5 -> Integer.class;
-                case 6, 7 -> Double.class;
+                case 6, 7, 8 -> Double.class;
                 default -> Object.class;
             };
         }
@@ -224,7 +224,7 @@ public final class DetectorWorkspace extends JPanel {
 
         metrics.add(metricCard("CANDIDATE REGIONS", regionCount, regionBadge, regionDetail));
         metrics.add(metricCard("SURFACE COVERAGE", coverage, null, coverageDetail));
-        metrics.add(metricCard("MAX BOX DIAGONAL", maxSpanMetric, null, maxSpanDetail));
+        metrics.add(metricCard("WIDEST CANDIDATE (EST.)", maxSpanMetric, null, maxSpanDetail));
         metrics.add(metricCard("ANALYSIS SIZE & LIMIT", analysisSize, null, analysisScaleDetail));
         return metrics;
     }
@@ -812,14 +812,14 @@ public final class DetectorWorkspace extends JPanel {
             mask.setImage(views.mask());
 
             table.setRowCount(0);
-            double maxSpan = 0.0;
             for (CrackRegion r : result.regions()) {
                 table.addRow(new Object[]{
                         r.id(), r.x(), r.y(), r.width(), r.height(),
                         r.pixelCount(), Math.round(r.span() * 100.0) / 100.0,
-                        Math.round(r.circularity() * 1000.0) / 1000.0
+                        Math.round(r.circularity() * 1000.0) / 1000.0,
+                        Math.round(r.estimatedThickness() * 100.0) / 100.0,
+                        r.orientation()
                 });
-                if (r.span() > maxSpan) maxSpan = r.span();
             }
 
             int count = result.regions().size();
@@ -835,7 +835,7 @@ public final class DetectorWorkspace extends JPanel {
                 regionBadge.setForeground(DesktopTheme.BLUE);
                 regionBadge.setBackground(new Color(238, 242, 255));
                 regionDetail.setText(count == 1 ? "1 connected crack" : count + " connected cracks");
-                maxSpanMetric.setText(String.format(Locale.ROOT, "%.1f px", maxSpan));
+                maxSpanMetric.setText(String.format(Locale.ROOT, "~%.1f px", result.maximumEstimatedThickness()));
             }
 
             coverage.setText(String.format(Locale.ROOT, "%.3f%%", result.coveragePercent()));
@@ -884,7 +884,7 @@ public final class DetectorWorkspace extends JPanel {
             return;
         }
 
-        StringBuilder sb = new StringBuilder("ID,X,Y,Width,Height,Pixels,Box_diagonal_px,Circularity\n");
+        StringBuilder sb = new StringBuilder("ID,X,Y,Width,Height,Pixels,Box_diagonal_px,Circularity,Estimated_thickness_px,Orientation\n");
         for (int r = 0; r < table.getRowCount(); r++) {
             for (int c = 0; c < table.getColumnCount(); c++) {
                 sb.append(table.getValueAt(r, c));
@@ -907,12 +907,13 @@ public final class DetectorWorkspace extends JPanel {
                         + "Candidate Regions: %d\n"
                         + "Coverage: %.4f%%\n"
                         + "Candidate Pixels: %d\n"
+                        + "Widest Estimated Candidate: %.2f analysis px\n"
                         + "Effective Threshold: %d\n"
                         + "Threshold Method: %s\n"
                         + "Analysis Dimensions: %d × %d px\n"
                         + "Original Dimensions: %d × %d px\n"
                         + "Source: %s\n",
-                result.regions().size(), result.coveragePercent(), result.candidatePixels(),
+                result.regions().size(), result.coveragePercent(), result.candidatePixels(), result.maximumEstimatedThickness(),
                 result.effectiveThreshold(), result.config().thresholdMethod(),
                 result.width(), result.height(), result.originalWidth(), result.originalHeight(),
                 currentFilePath != null ? currentFilePath.getFileName().toString() : "Unknown");

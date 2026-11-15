@@ -48,10 +48,11 @@ public final class ReportExporter {
     }
 
     private static String csv(DetectionResult result) {
-        StringBuilder text = new StringBuilder("id,x,y,width,height,pixel_count,box_diagonal_pixels,circularity\n");
+        StringBuilder text = new StringBuilder("id,x,y,width,height,pixel_count,box_diagonal_pixels,circularity,estimated_thickness_pixels,orientation\n");
         for (var region : result.regions()) {
-            text.append(String.format(Locale.ROOT, "%d,%d,%d,%d,%d,%d,%.3f,%.3f%n", region.id(),
-                    region.x(), region.y(), region.width(), region.height(), region.pixelCount(), region.span(), region.circularity()));
+            text.append(String.format(Locale.ROOT, "%d,%d,%d,%d,%d,%d,%.3f,%.3f,%.3f,%s%n", region.id(),
+                    region.x(), region.y(), region.width(), region.height(), region.pixelCount(), region.span(),
+                    region.circularity(), region.estimatedThickness(), region.orientation()));
         }
         return text.toString();
     }
@@ -72,6 +73,7 @@ public final class ReportExporter {
                   "candidateCount": %d,
                   "candidatePixels": %d,
                   "coveragePercent": %.6f,
+                  "maximumEstimatedThicknessPixels": %.3f,
                   "config": {
                     "thresholdMethod": "%s",
                     "sensitivityOffset": %d,
@@ -84,15 +86,17 @@ public final class ReportExporter {
                   "regions": [
                 """, result.originalWidth(), result.originalHeight(), result.width(), result.height(),
                 result.effectiveThreshold(), result.regions().size(), result.candidatePixels(), result.coveragePercent(),
+                result.maximumEstimatedThickness(),
                 config.thresholdMethod(), config.sensitivityOffset(), config.minArea(), config.maxCircularity(),
                 config.correctLighting(), config.closingRadius(), config.maxDimension()));
         for (int i = 0; i < result.regions().size(); i++) {
             var region = result.regions().get(i);
             text.append(String.format(Locale.ROOT,
                     "    {\"id\": %d, \"x\": %d, \"y\": %d, \"width\": %d, \"height\": %d, "
-                    + "\"pixelCount\": %d, \"boxDiagonal\": %.3f, \"circularity\": %.3f}%s%n",
+                    + "\"pixelCount\": %d, \"boxDiagonal\": %.3f, \"circularity\": %.3f, "
+                    + "\"estimatedThicknessPixels\": %.3f, \"orientation\": \"%s\"}%s%n",
                     region.id(), region.x(), region.y(), region.width(), region.height(),
-                    region.pixelCount(), region.span(), region.circularity(),
+                    region.pixelCount(), region.span(), region.circularity(), region.estimatedThickness(), region.orientation(),
                     i + 1 < result.regions().size() ? "," : ""));
         }
         return text.append("  ]\n}\n").toString();

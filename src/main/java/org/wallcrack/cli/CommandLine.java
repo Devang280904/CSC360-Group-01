@@ -60,6 +60,7 @@ public final class CommandLine {
             ReportExporter.export(result, output);
             out.printf(Locale.ROOT, "Candidate regions: %d%nCandidate coverage: %.3f%%%nAnalysis: %d x %d pixels%nEffective threshold: %d%n",
                     result.regions().size(), result.coveragePercent(), result.width(), result.height(), result.effectiveThreshold());
+            out.printf(Locale.ROOT, "Widest estimated candidate: %.2f analysis pixels%n", result.maximumEstimatedThickness());
             out.println("Reports saved to: " + output.toAbsolutePath().normalize());
             out.println("Candidates require visual review; this result does not assess structural safety.");
             return 0;

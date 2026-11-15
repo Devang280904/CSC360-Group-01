@@ -136,6 +136,11 @@ public final class DetectionResult {
      */
     public double coveragePercent() { return 100.0 * candidatePixels / mask.length; }
 
+    /** Returns the widest estimated candidate thickness in analysis pixels, or zero. */
+    public double maximumEstimatedThickness() {
+        return regions.stream().mapToDouble(CrackRegion::estimatedThickness).max().orElse(0.0);
+    }
+
     /**
      * Checks the retained mask at the specified analysis coordinate.
      * @param x horizontal coordinate
