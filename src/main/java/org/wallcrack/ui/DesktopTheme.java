@@ -46,7 +46,7 @@ public final class DesktopTheme {
     /** Subtle alternating dark row surface (#0E1524). */
     public static final Color CARD_BACKGROUND_ALT = new Color(14, 21, 36);
 
-    /** Deep midnight canvas for image & diagram viewports (#0A0E17). */
+    /** Deep midnight canvas for image and diagram viewports (#0A0E17). */
     public static final Color CANVAS_BG = new Color(10, 14, 23);
 
     /** Inset dark surface for inputs, comboboxes, and spinners (#0F172A). */
@@ -76,50 +76,77 @@ public final class DesktopTheme {
 
     /** Primary Brand Blue / Electric Sky (#38BDF8). */
     public static final Color BLUE = new Color(56, 189, 248);
+    /** Hover state fill for primary brand blue. */
     public static final Color BLUE_HOVER = new Color(14, 165, 233);
+    /** Pressed state fill for primary brand blue. */
     public static final Color BLUE_PRESSED = new Color(2, 132, 199);
 
     /** Vibrant Royal Indigo / Purple for primary action buttons (#6366F1). */
     public static final Color INDIGO = new Color(99, 102, 241);
+    /** Hover state fill for indigo buttons. */
     public static final Color INDIGO_HOVER = new Color(79, 70, 229);
+    /** Pressed state fill for indigo buttons. */
     public static final Color INDIGO_PRESSED = new Color(67, 56, 202);
+    /** Dark tinted background for indigo badges. */
     public static final Color INDIGO_DARK = new Color(30, 27, 75);
+    /** Translucent highlight for indigo elements. */
     public static final Color INDIGO_LIGHT = new Color(49, 46, 129, 200);
+    /** Vibrant outline border for indigo elements. */
     public static final Color INDIGO_BORDER = new Color(129, 140, 248);
 
     /** Radiant Sky / Electric Cyan for subtitles, metrics, and line L2 (#38BDF8). */
     public static final Color CYAN = new Color(56, 189, 248);
+    /** Hover state fill for cyan buttons and controls. */
     public static final Color CYAN_HOVER = new Color(14, 165, 233);
+    /** Dark tinted background for cyan badges. */
     public static final Color CYAN_DARK = new Color(8, 47, 73);
+    /** Translucent highlight for cyan elements. */
     public static final Color CYAN_LIGHT = new Color(12, 74, 110, 200);
+    /** Vibrant outline border for cyan elements. */
     public static final Color CYAN_BORDER = new Color(2, 132, 199);
 
     /** Vibrant Rose / Coral for defects, cracks, and line L1 (#F43F5E). */
     public static final Color ROSE = new Color(244, 63, 94);
+    /** Hover state fill for rose buttons and controls. */
     public static final Color ROSE_HOVER = new Color(225, 29, 72);
+    /** Dark tinted background for rose badges. */
     public static final Color ROSE_DARK = new Color(76, 5, 25);
+    /** Translucent highlight for rose elements. */
     public static final Color ROSE_LIGHT = new Color(136, 19, 55, 200);
+    /** Vibrant outline border for rose elements. */
     public static final Color ROSE_BORDER = new Color(190, 18, 60);
 
     /** Warm Sunset Amber / Gold for exports, spans, and line L3 (#F59E0B). */
     public static final Color AMBER_GOLD = new Color(245, 158, 11);
+    /** Hover state fill for amber buttons and controls. */
     public static final Color AMBER_HOVER = new Color(217, 119, 6);
+    /** Dark tinted background for amber badges. */
     public static final Color AMBER_DARK = new Color(69, 26, 3);
+    /** Translucent highlight for amber elements. */
     public static final Color AMBER_LIGHT = new Color(120, 53, 15, 200);
+    /** Vibrant outline border for amber elements. */
     public static final Color AMBER_BORDER = new Color(180, 83, 9);
 
-    /** Radiant Mint / Emerald for verified banner & clean state (#34D399). */
+    /** Radiant Mint / Emerald for verified banner and clean state (#34D399). */
     public static final Color EMERALD_MINT = new Color(52, 211, 153);
+    /** Hover state fill for emerald buttons and controls. */
     public static final Color EMERALD_HOVER = new Color(16, 185, 129);
+    /** Dark tinted background for emerald badges. */
     public static final Color EMERALD_DARK = new Color(6, 78, 59);
+    /** Translucent highlight for emerald elements. */
     public static final Color EMERALD_LIGHT = new Color(6, 95, 70, 200);
+    /** Vibrant outline border for emerald elements. */
     public static final Color EMERALD_BORDER = new Color(5, 150, 105);
 
-    /** Electric Violet / Purple for algorithms & filters (#A855F7). */
+    /** Electric Violet / Purple for algorithms and filters (#A855F7). */
     public static final Color PURPLE = new Color(168, 85, 247);
+    /** Hover state fill for purple buttons and controls. */
     public static final Color PURPLE_HOVER = new Color(147, 51, 234);
+    /** Dark tinted background for purple badges. */
     public static final Color PURPLE_DARK = new Color(46, 16, 101);
+    /** Translucent highlight for purple elements. */
     public static final Color PURPLE_LIGHT = new Color(88, 28, 135, 200);
+    /** Vibrant outline border for purple elements. */
     public static final Color PURPLE_BORDER = new Color(124, 58, 237);
 
     /** High-visibility magenta for candidate crack pixels (#EC4899). */
@@ -602,6 +629,12 @@ public final class DesktopTheme {
     public static class ModernSliderUI extends javax.swing.plaf.basic.BasicSliderUI {
         private final Color accentColor;
 
+        /**
+         * Constructs a modern slider UI with the specified accent track color.
+         *
+         * @param slider target JSlider component
+         * @param accentColor vibrant fill and thumb outline color
+         */
         public ModernSliderUI(JSlider slider, Color accentColor) {
             super(slider);
             this.accentColor = accentColor;
