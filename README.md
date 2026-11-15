@@ -155,6 +155,5 @@ CSC360-Group-01/
 │   │   └── ui/                         # Swing UI components (Frame, Workspace, Panel)
 │   └── test/java/org/wallcrack/        # JUnit regression test suite
 ├── pom.xml                             # Maven build and dependencies file
-├── run.bat                             # One-click Windows launcher
 └── README.md                           # Main project guide (this file)
 ```
