@@ -1,6 +1,7 @@
 package org.wallcrack.ui;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.GraphicsEnvironment;
 import java.awt.event.InputEvent;
@@ -52,6 +53,8 @@ public final class DetectorFrame extends JFrame {
 
     private JMenuBar createMenuBar() {
         JMenuBar bar = new JMenuBar();
+        bar.setBackground(DesktopTheme.BACKGROUND);
+        bar.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, DesktopTheme.LINE));
         bar.add(createFileMenu());
         bar.add(createEditMenu());
         bar.add(createViewMenu());
@@ -257,16 +260,18 @@ public final class DetectorFrame extends JFrame {
 
     private void showAboutDialog() {
         JPanel panel = new JPanel(new BorderLayout(16, 12));
-        panel.setBorder(BorderFactory.createEmptyBorder(12, 16, 12, 16));
+        panel.setBackground(DesktopTheme.CARD_BACKGROUND);
+        panel.setBorder(BorderFactory.createEmptyBorder(14, 18, 14, 18));
 
         JPanel content = new JPanel();
+        content.setOpaque(false);
         content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
 
-        JLabel title = DesktopTheme.label("Wall Crack Detector", 20, true, DesktopTheme.INK);
-        JLabel version = DesktopTheme.label("Version 1.0.0 — Java 17+", 12, false, DesktopTheme.BLUE);
+        JLabel title = DesktopTheme.label("Wall Crack Detector", 20, true, Color.WHITE);
+        JLabel version = DesktopTheme.label("Version 1.0.0 — Java 17+ & ImageJ 1.54p", 12, false, DesktopTheme.CYAN);
         JLabel desc = DesktopTheme.label("Desktop & CLI application for reviewing possible cracks in wall photographs.",
-                12, false, DesktopTheme.INK);
-        JLabel note = DesktopTheme.label("Engineered with dependency-free native Java 2D and Swing.", 11, false, DesktopTheme.MUTED);
+                12, false, DesktopTheme.INK_SECONDARY);
+        JLabel note = DesktopTheme.label("Engineered with high-contrast vibrant theme and ImageJ particle vision.", 11, false, DesktopTheme.MUTED);
 
         content.add(title);
         content.add(Box.createVerticalStrut(4));

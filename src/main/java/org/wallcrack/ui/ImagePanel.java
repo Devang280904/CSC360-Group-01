@@ -63,7 +63,7 @@ public final class ImagePanel extends JPanel {
      */
     public ImagePanel(String placeholder) {
         this.placeholder = Objects.requireNonNull(placeholder, "placeholder");
-        setBackground(new Color(241, 245, 249));
+        setBackground(DesktopTheme.CANVAS_BG);
         setFont(DesktopTheme.font(12, false));
         setPreferredSize(new Dimension(420, 340));
         setMinimumSize(new Dimension(180, 150));
@@ -294,52 +294,85 @@ public final class ImagePanel extends JPanel {
         int rw = Math.max(4, (int) Math.round(region.width() * scale));
         int rh = Math.max(4, (int) Math.round(region.height() * scale));
 
-        // Pulsing amber/cyan highlight box
-        canvas.setColor(new Color(245, 158, 11, 45));
+        // Pulsing amber/cyan highlight box with glowing corners
+        canvas.setColor(new Color(245, 158, 11, 40));
         canvas.fillRect(rx - 2, ry - 2, rw + 4, rh + 4);
-        canvas.setColor(new Color(245, 158, 11));
-        canvas.setStroke(new BasicStroke(2.5f));
+        canvas.setColor(DesktopTheme.AMBER_GOLD);
+        canvas.setStroke(new BasicStroke(2.0f));
         canvas.drawRect(rx - 2, ry - 2, rw + 4, rh + 4);
 
-        // Region identifier pill badge
+        // Corner crosshair brackets in glowing cyan
+        canvas.setColor(DesktopTheme.CYAN);
+        canvas.setStroke(new BasicStroke(2.5f));
+        int cornerLen = Math.min(8, Math.min(rw, rh) / 2);
+        canvas.drawLine(rx - 2, ry - 2, rx - 2 + cornerLen, ry - 2);
+        canvas.drawLine(rx - 2, ry - 2, rx - 2, ry - 2 + cornerLen);
+        canvas.drawLine(rx + rw + 2, ry - 2, rx + rw + 2 - cornerLen, ry - 2);
+        canvas.drawLine(rx + rw + 2, ry - 2, rx + rw + 2, ry - 2 + cornerLen);
+        canvas.drawLine(rx - 2, ry + rh + 2, rx - 2 + cornerLen, ry + rh + 2);
+        canvas.drawLine(rx - 2, ry + rh + 2, rx - 2, ry + rh + 2 - cornerLen);
+        canvas.drawLine(rx + rw + 2, ry + rh + 2, rx + rw + 2 - cornerLen, ry + rh + 2);
+        canvas.drawLine(rx + rw + 2, ry + rh + 2, rx + rw + 2, ry + rh + 2 - cornerLen);
+
+        // Region identifier pill badge (matching TriangleFX vertex badge style)
         String tag = "Region #" + region.id() + " (" + region.pixelCount() + " px)";
         canvas.setFont(DesktopTheme.font(11, true));
         var metrics = canvas.getFontMetrics();
-        int tagW = metrics.stringWidth(tag) + 12;
-        int tagH = 18;
+        int tagW = metrics.stringWidth(tag) + 14;
+        int tagH = 20;
         int tagX = rx;
-        int tagY = Math.max(4, ry - tagH - 4);
-        canvas.setColor(new Color(15, 23, 42, 220));
+        int tagY = Math.max(4, ry - tagH - 6);
+        canvas.setColor(new Color(11, 17, 30, 240));
         canvas.fillRoundRect(tagX, tagY, tagW, tagH, 6, 6);
-        canvas.setColor(new Color(245, 158, 11));
-        canvas.drawString(tag, tagX + 6, tagY + 13);
+        canvas.setColor(DesktopTheme.CYAN);
+        canvas.drawRoundRect(tagX, tagY, tagW, tagH, 6, 6);
+        canvas.setColor(Color.WHITE);
+        canvas.drawString(tag, tagX + 7, tagY + 14);
     }
 
     private void paintPlaceholder(Graphics2D canvas) {
         int center = getWidth() / 2;
-        int iconTop = Math.max(20, getHeight() / 2 - 50);
+        int iconTop = Math.max(20, getHeight() / 2 - 55);
 
-        // Rounded camera/inspection illustration
-        canvas.setColor(new Color(226, 232, 240));
-        canvas.fillRoundRect(center - 28, iconTop, 56, 44, 12, 12);
-        canvas.setColor(new Color(148, 163, 184));
+        // Background dark grid lines
+        canvas.setColor(new Color(30, 41, 59, 70));
+        canvas.setStroke(new BasicStroke(1.0f));
+        int step = 32;
+        for (int x = step; x < getWidth(); x += step) {
+            canvas.drawLine(x, 0, x, getHeight());
+        }
+        for (int y = step; y < getHeight(); y += step) {
+            canvas.drawLine(0, y, getWidth(), y);
+        }
+
+        // Radar / viewfinder aperture illustration
+        canvas.setColor(new Color(19, 27, 46));
+        canvas.fillRoundRect(center - 32, iconTop, 64, 50, 12, 12);
+        canvas.setColor(DesktopTheme.LINE);
         canvas.setStroke(new BasicStroke(1.5f));
-        canvas.drawRoundRect(center - 28, iconTop, 56, 44, 12, 12);
-        canvas.drawOval(center - 12, iconTop + 10, 24, 24);
-        canvas.fillOval(center + 14, iconTop + 6, 6, 6);
+        canvas.drawRoundRect(center - 32, iconTop, 64, 50, 12, 12);
 
-        canvas.setColor(DesktopTheme.MUTED);
-        canvas.setFont(getFont());
+        // Glowing cyan aperture ring
+        canvas.setColor(DesktopTheme.CYAN);
+        canvas.drawOval(center - 15, iconTop + 10, 30, 30);
+        canvas.setColor(DesktopTheme.INDIGO);
+        canvas.drawOval(center - 9, iconTop + 16, 18, 18);
+        canvas.setColor(Color.WHITE);
+        canvas.fillOval(center + 18, iconTop + 6, 6, 6);
+
+        // Text cues in readable dark theme typography
+        canvas.setColor(DesktopTheme.INK_SECONDARY);
+        canvas.setFont(DesktopTheme.font(13, true));
         List<String> lines = wrap(placeholder, canvas, Math.max(80, getWidth() - 44));
-        int baseline = iconTop + 66;
+        int baseline = iconTop + 72;
         for (String line : lines) {
             int textWidth = canvas.getFontMetrics().stringWidth(line);
             canvas.drawString(line, Math.max(10, (getWidth() - textWidth) / 2), baseline);
-            baseline += 18;
+            baseline += 20;
         }
 
-        // Drag & drop hint
-        canvas.setColor(new Color(148, 163, 184));
+        // Drag & drop hint in glowing cyan
+        canvas.setColor(DesktopTheme.CYAN);
         canvas.setFont(DesktopTheme.font(11, false));
         String dropHint = "Or drag & drop an image file here";
         int dropWidth = canvas.getFontMetrics().stringWidth(dropHint);
