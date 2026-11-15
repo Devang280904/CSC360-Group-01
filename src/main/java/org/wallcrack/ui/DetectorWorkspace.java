@@ -690,6 +690,7 @@ public final class DetectorWorkspace extends JPanel {
 
     /** Prompts the user to select an image file via desktop file chooser. */
     public void openImage() {
+        if (busy) return;
         JFileChooser chooser = new JFileChooser();
         chooser.setDialogTitle("Choose a wall photograph for crack inspection");
         chooser.setFileFilter(new FileNameExtensionFilter("Photographs (*.png, *.jpg, *.jpeg, *.bmp)", "png", "jpg", "jpeg", "bmp"));
@@ -703,8 +704,9 @@ public final class DetectorWorkspace extends JPanel {
      * @param file path to image file
      */
     public void loadFile(Path file) {
-        currentFilePath = file;
+        if (busy) return;
         runTask("Loading photograph...", () -> ImageFiles.read(file), image -> {
+            currentFilePath = file;
             source = image;
             original.setImage(image);
             fileDimensionsBadge.setText(image.getWidth() + " × " + image.getHeight() + " px");
@@ -721,6 +723,7 @@ public final class DetectorWorkspace extends JPanel {
      * @param sampleName sample file name (e.g. "wall-cracked.png" or "wall-clean.png")
      */
     public void loadSampleFile(String sampleName) {
+        if (busy) return;
         Path direct = Path.of("samples").resolve(sampleName);
         if (Files.exists(direct)) {
             loadFile(direct);
@@ -736,6 +739,12 @@ public final class DetectorWorkspace extends JPanel {
 
     /** Executes the wall crack detection algorithm in a background SwingWorker thread. */
     public void analyze() {
+        if (busy) return;
+        if (source == null) {
+            statusDot.setForeground(DesktopTheme.WARNING);
+            status.setText("Open a wall photograph before running analysis.");
+            return;
+        }
         try {
             for (JSpinner setting : settings) setting.commitEdit();
         } catch (java.text.ParseException exception) {
@@ -807,7 +816,7 @@ public final class DetectorWorkspace extends JPanel {
 
     /** Exports the completed detection overlay, mask, CSV, and JSON report bundle. */
     public void export() {
-        if (result == null) return;
+        if (busy || result == null) return;
         JFileChooser chooser = new JFileChooser();
         chooser.setDialogTitle("Select export directory for report bundle");
         chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
@@ -874,6 +883,7 @@ public final class DetectorWorkspace extends JPanel {
 
     /** Resets parameters back to the standard defaults. */
     public void resetDefaults() {
+        if (busy) return;
         DetectionConfig config = DetectionConfig.defaults();
         resettingSettings = true;
         try {
@@ -937,6 +947,7 @@ public final class DetectorWorkspace extends JPanel {
     public boolean hasResult() { return result != null; }
 
     private <T> void runTask(String message, Callable<T> task, Consumer<T> success) {
+        if (busy) return;
         busy = true;
         statusDot.setForeground(DesktopTheme.BLUE);
         status.setText(message);
