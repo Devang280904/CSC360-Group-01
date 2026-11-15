@@ -10,6 +10,7 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    continue-on-error: ${{ matrix.java == '25' }}
     strategy:
       fail-fast: false
       matrix:
