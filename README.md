@@ -17,6 +17,7 @@ the application does not determine structural safety or crack severity.
 - Region filtering with minimum area floor and maximum circularity constraint.
 - Optional rolling-ball background correction and morphological gap closing.
 - Sortable measurement table with candidate bounds, pixel counts, diagonals, and circularity.
+- Estimated candidate thickness and dominant orientation for faster image-space review.
 - Bi-directional highlighting: selecting or double-clicking table rows centers on that crack.
 - Desktop menu bar with standard keyboard accelerators (Ctrl+O, F5, Ctrl+E, etc.) and Drag & Drop.
 - One-click sample loaders for instant testing with bundled wall photographs.
@@ -87,6 +88,7 @@ Candidate regions: 1
 Candidate coverage: 0.434%
 Analysis: 800 x 600 pixels
 Effective threshold: 215
+Widest estimated candidate: 3.00 analysis pixels
 ```
 
 For faint or custom marks:
@@ -121,7 +123,7 @@ desktop. Zero candidates is a successful analysis, not an error.
 | --- | --- |
 | `overlay.png` | Analysis image with magenta candidate pixels and numbered red bounds |
 | `mask.png` | White accepted pixels on a black background |
-| `regions.csv` | `id,x,y,width,height,pixel_count,box_diagonal_pixels,circularity` |
+| `regions.csv` | Bounds, pixel count, box diagonal, circularity, estimated thickness, and orientation |
 | `report.json` | Method, dimensions, ImageJ threshold, settings, coverage, and regions |
 
 Coordinates are **zero-based analysis-image pixels**, with the origin at the
@@ -131,6 +133,8 @@ small images are not enlarged.
 Coverage is `100 × candidate pixels / analysis image pixels`. Diagonal is the
 bounding-box diagonal `sqrt(width² + height²)`, not traced crack length.
 Circularity is `4 × pi × (area / perimeter²)`. Measurements are not in millimeters.
+Estimated thickness is `candidate pixel count ÷ longest bounding-box side`; it is a screening
+aid in the resized analysis image, not a calibrated physical crack width.
 Neither coverage nor count represents severity or prediction confidence.
 
 ## Detection algorithm

@@ -14,12 +14,18 @@ package org.wallcrack.model;
  */
 public record CrackRegion(int id, int x, int y, int width, int height,
                           int pixelCount, double span, double circularity) {
-    /** Returns an image-space thickness estimate; this is not a physical width measurement. */
+    /**
+     * Returns an image-space thickness estimate; this is not a physical width measurement.
+     * @return candidate area divided by its longest bounding-box side
+     */
     public double estimatedThickness() {
         return (double) pixelCount / Math.max(width, height);
     }
 
-    /** Returns the dominant bounding-box direction for quick review. */
+    /**
+     * Returns the dominant bounding-box direction for quick review.
+     * @return Vertical, Horizontal, Compact, or Diagonal / mixed
+     */
     public String orientation() {
         double ratio = (double) width / height;
         if (ratio <= 0.60) return "Vertical";

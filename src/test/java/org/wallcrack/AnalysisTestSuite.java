@@ -171,7 +171,7 @@ public final class AnalysisTestSuite {
                 check(csv.lines().count() == 2 && csv.contains("1,158,35,3,170,510,"), "CSV region");
                 String json = Files.readString(output.resolve("report.json"));
                 check(json.contains("\"candidateCount\": 1") && json.contains("\"coveragePercent\": 0.664063"), "JSON measurements");
-                check(json.contains("\"schemaVersion\": 2") && json.contains("\"effectiveThreshold\":"), "JSON schema v2");
+                check(json.contains("\"schemaVersion\": 3") && json.contains("\"effectiveThreshold\":"), "JSON schema v3");
                 check(json.contains("\"maximumEstimatedThicknessPixels\": 3.000")
                         && json.contains("\"orientation\": \"Vertical\""), "JSON candidate insights");
                 byte[] before = Files.readAllBytes(output.resolve("overlay.png"));

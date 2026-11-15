@@ -825,10 +825,10 @@ public final class DetectorWorkspace extends JPanel {
             int count = result.regions().size();
             regionCount.setText(count == 1 ? "1 region" : count + " regions");
             if (count == 0) {
-                regionBadge.setText("0 / CLEAN");
+                regionBadge.setText("NO MATCH");
                 regionBadge.setForeground(DesktopTheme.SUCCESS);
                 regionBadge.setBackground(new Color(236, 253, 245));
-                regionDetail.setText("No candidates found");
+                regionDetail.setText("None at current settings");
                 maxSpanMetric.setText("0.0 px");
             } else {
                 regionBadge.setText("REVIEW");
@@ -846,7 +846,7 @@ public final class DetectorWorkspace extends JPanel {
             analysisScaleDetail.setText(String.format(Locale.ROOT, "Scale: %.2f × | Auto-threshold: %d",
                     scale, result.effectiveThreshold()));
 
-            summary.setText(count == 0 ? "No candidates found with current settings"
+            summary.setText(count == 0 ? "No candidates found; this does not prove the surface is crack-free"
                     : "Found " + count + " candidate regions. Double-click row to center viewport.");
             statusDot.setForeground(DesktopTheme.SUCCESS);
             status.setText("Analysis complete: " + count + " candidate regions found (threshold " + result.effectiveThreshold() + "). Ready to review and export.");

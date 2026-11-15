@@ -6,6 +6,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import javax.imageio.ImageIO;
@@ -20,7 +21,7 @@ public final class ReportExporter {
 
     /**
      * Exports one analysis into a directory. Use a different directory for each run.
-     * An I/O failure can leave partial output; successful earlier files are preserved.
+     * If writing fails, files created by this invocation are removed where possible.
      * @param result completed analysis
      * @param directory destination directory, created if necessary
      * @throws IOException if files already exist or output cannot be written
@@ -33,12 +34,30 @@ public final class ReportExporter {
                         + ". Choose a new output directory.");
             }
         }
-        writePng(ResultImages.overlay(result), directory.resolve("overlay.png"));
-        writePng(ResultImages.mask(result), directory.resolve("mask.png"));
-        Files.writeString(directory.resolve("regions.csv"), csv(result), StandardCharsets.UTF_8,
-                StandardOpenOption.CREATE_NEW);
-        Files.writeString(directory.resolve("report.json"), json(result), StandardCharsets.UTF_8,
-                StandardOpenOption.CREATE_NEW);
+        List<Path> created = new ArrayList<>();
+        try {
+            Path overlay = directory.resolve("overlay.png");
+            writePng(ResultImages.overlay(result), overlay);
+            created.add(overlay);
+            Path mask = directory.resolve("mask.png");
+            writePng(ResultImages.mask(result), mask);
+            created.add(mask);
+            Path csv = directory.resolve("regions.csv");
+            Files.writeString(csv, csv(result), StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW);
+            created.add(csv);
+            Path json = directory.resolve("report.json");
+            Files.writeString(json, json(result), StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW);
+            created.add(json);
+        } catch (IOException failure) {
+            for (Path path : created) {
+                try {
+                    Files.deleteIfExists(path);
+                } catch (IOException cleanupFailure) {
+                    failure.addSuppressed(cleanupFailure);
+                }
+            }
+            throw failure;
+        }
     }
 
     private static void writePng(BufferedImage image, Path path) throws IOException {
@@ -61,7 +80,7 @@ public final class ReportExporter {
         var config = result.config();
         StringBuilder text = new StringBuilder(String.format(Locale.ROOT, """
                 {
-                  "schemaVersion": 2,
+                  "schemaVersion": 3,
                   "engine": "ImageJ 1.54p",
                   "method": "imagej-autothreshold-particle-analysis",
                   "coordinateSystem": "analysis image pixels; origin at top left",

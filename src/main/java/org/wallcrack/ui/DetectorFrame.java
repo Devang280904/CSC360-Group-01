@@ -204,10 +204,14 @@ public final class DetectorFrame extends JFrame {
                    Avoid direct flash casting harsh artificial shadows.
                 2. Framing: Position camera parallel to the wall surface to avoid perspective distortion.
                 3. Surface Texture: For stucco, brick, or heavily textured paint, increase
-                   'Neighborhood Radius' and 'Minimum Connected Pixels' to suppress grain noise.
-                4. Hairline Cracks: For faint or narrow cracks, lower the 'Darkness Threshold' (6–10).
+                   'Minimum Particle Area' and lower 'Maximum Circularity' to suppress compact noise.
+                4. Hairline Cracks: For faint marks, raise 'Sensitivity Offset' gradually and
+                   compare the highlighted overlay against the original photograph.
                 5. Resolution: High megapixel photos are automatically resized to fit within
                    the 'Analysis Size Limit' while preserving aspect ratio.
+
+                Candidate thickness is an estimate in resized analysis pixels. It is not a
+                millimetre measurement, confidence score, or structural-safety assessment.
                 """;
         JOptionPane.showMessageDialog(this, message, "Wall Inspection Guide", JOptionPane.INFORMATION_MESSAGE);
     }
