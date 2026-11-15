@@ -1,6 +1,6 @@
 # Wall Crack Detector - Java Application for Detecting Cracks in Walls
 
-This is a simple and easy-to-use desktop application made in Java. It helps you find and mark cracks on wall photos automatically. You just have to load any wall photo, and this software will scan the photo, find crack-like lines, mark them with bright colours, and give you a detailed list with measurements like crack size and location.
+This is a desktop application made in Java which helps you find and mark cracks on wall photos automatically. You just have to load any wall photo, and this software will scan the photo, find crack-like lines, mark them with bright colours, and give you a detailed list with measurements like crack size and location.
 
 
 ---
