@@ -1,77 +1,72 @@
 # Wall Crack Detector
 
-A Java desktop and command-line application that highlights **possible cracks
-in wall photographs** using ImageJ-powered automated thresholding and particle
-analysis. It runs locally with an embedded ImageJ core library: no Python,
-OpenCV, trained model, or external service is required.
+A local Java desktop and command-line tool that highlights possible crack-like regions in wall photographs using ImageJ thresholding and particle analysis. It supports interactive review, pixel-space measurements, and PNG/CSV/JSON exports without cloud services or a trained model.
 
-This is an educational image-processing project. Detections need visual review;
-the application does not determine structural safety or crack severity.
+| Desktop inspection workspace | Detected candidate overlay |
+| --- | --- |
+| ![Wall Crack Detector desktop workspace](docs/desktop-preview.png) | ![Detected candidate pixels and region boundary](docs/demo-overlay.png) |
+
+> [!IMPORTANT]
+> This is an educational image-processing tool. Results require visual review and do not determine structural safety, severity, or physical crack width.
+
+## Table of contents
+
+- [Features](#features)
+- [Quick start](#quick-start)
+- [Desktop workflow](#desktop-workflow)
+- [Command-line usage](#command-line-usage)
+- [Configuration](#configuration)
+- [Exports and measurements](#exports-and-measurements)
+- [Detection pipeline](#detection-pipeline)
+- [Testing and evaluation](#testing-and-evaluation)
+- [Project structure](#project-structure)
+- [Documentation](#documentation)
+- [Limitations](#limitations)
 
 ## Features
 
-- Load photographs and inspect original, highlighted overlay, and binary mask views.
-- Interactive pan and zoom with mouse wheel, centering, and 1:1 pixel inspection.
-- Real-time cursor coordinates and RGB/luminance pixel inspector.
-- ImageJ thresholding with automatic method selection (Triangle or Otsu) and sensitivity tuning.
-- Region filtering with minimum area floor and maximum circularity constraint.
-- Optional rolling-ball background correction and morphological gap closing.
-- Sortable measurement table with candidate bounds, pixel counts, diagonals, and circularity.
-- Estimated candidate thickness and dominant orientation for faster image-space review.
-- Bi-directional highlighting: selecting or double-clicking table rows centers on that crack.
-- Desktop menu bar with standard keyboard accelerators (Ctrl+O, F5, Ctrl+E, etc.) and Drag & Drop.
-- One-click sample loaders for instant testing with bundled wall photographs.
-- Export PNG visualizations, CSV measurements, and a JSON analysis report.
-- Analyze images from the command line without a graphical display.
-- Keep the desktop responsive with background loading, analysis, and export.
-- Run regression tests and generate strict Javadoc.
+- Original, highlighted-overlay, and binary-mask views.
+- Interactive zoom, pan, 1:1 inspection, pixel coordinates, RGB, and luminance.
+- Triangle or Otsu automatic thresholding with sensitivity adjustment.
+- Minimum-area and circularity filters for suppressing noise and compact marks.
+- Optional rolling-ball lighting correction and morphological gap closing.
+- Sortable candidate table with bounds, pixels, diagonal, circularity, estimated thickness, and orientation.
+- Two-way navigation between table rows and highlighted regions.
+- Bundled clean and cracked samples, drag-and-drop, and keyboard shortcuts.
+- PNG visualizations, CSV measurements, and JSON report export.
+- Headless CLI, JUnit regression tests, JaCoCo coverage enforcement, and strict Javadoc.
 
-## Example
+## Quick start
 
-These images are **synthetic**, not real wall photographs or evidence of
-real-world accuracy. The default detector finds one connected candidate in the
-cracked sample and none in the clean sample.
+### Requirements
 
-| Input example | Highlighted candidate |
-| --- | --- |
-| ![Synthetic wall with a branching dark line](samples/wall-cracked.png) | ![Magenta candidate pixels and a red region boundary](docs/demo-overlay.png) |
+- JDK 17 or newer
+- Maven 3.9 or newer
+- A graphical desktop for the Swing interface; CLI analysis works headlessly
 
-See [sample generation](samples/README.md).
-
-## Requirements and build
-
-- **JDK 17+**, including `java`, `javac`, `jar`, and `javadoc`.
-- Maven 3.9+ (or Bash scripts that invoke Maven).
-- A graphical desktop for Swing; command-line operation is headless.
-
-From the repository root, build and launch:
+Build and launch from the repository root:
 
 ```bash
 bash scripts/build.sh
 java -jar build/wall-crack-detector.jar
 ```
 
-Alternatively, use Maven directly:
+Or use Maven directly:
 
 ```bash
 mvn package
 java -jar target/wall-crack-detector-1.0.0.jar
 ```
 
-`mvn package` compiles, runs the regression suite, and creates the shaded,
-executable JAR with embedded ImageJ dependencies.
+## Desktop workflow
 
-## Desktop usage
+1. Select **Open Photograph**, drag an image into the window, or load a bundled sample.
+2. Adjust detection settings if needed and select **Analyze Wall**.
+3. Compare the original, highlighted overlay, and binary mask.
+4. Select a table row to highlight a candidate; double-click it to center the viewport.
+5. Select **Export Bundle** and choose a new output directory.
 
-1. Select **Open photograph** (or a sample button) and choose a wall photo.
-2. Adjust settings if necessary, then select **Analyze Wall**.
-3. Use the view selector to switch between **Highlighted Overlay** and **Binary Mask**,
-   then review the measurements table and summary cards.
-4. Select **Export Bundle** and choose an export folder.
-
-Magenta marks accepted pixels; red rectangles identify numbered candidate regions.
-Changing settings clears the previous result and disables export until
-reanalysis. No arguments, or `--gui`, opens the desktop.
+Magenta pixels are accepted candidate pixels, red rectangles are candidate bounds, and amber marks the focused region. Changing a detection setting invalidates the old result until the image is analyzed again.
 
 ## Command-line usage
 
@@ -81,113 +76,131 @@ java -jar build/wall-crack-detector.jar \
   --output output/cracked-demo
 ```
 
-Expected summary:
+Expected default summary for the bundled cracked sample:
 
 ```text
 Candidate regions: 1
 Candidate coverage: 0.434%
 Analysis: 800 x 600 pixels
 Effective threshold: 215
-Widest estimated candidate: 3.00 analysis pixels
+Widest estimated candidate: 4.32 analysis pixels
 ```
 
-For faint or custom marks:
+Example with custom settings:
 
 ```bash
 java -jar build/wall-crack-detector.jar \
-  --input "path/to/wall.jpg" --output output/wall-review \
-  --method Triangle --sensitivity 5 --min-area 40 --max-circularity 0.4
+  --input "path/to/wall.jpg" \
+  --output output/wall-review \
+  --method Triangle \
+  --sensitivity 5 \
+  --min-area 40 \
+  --max-circularity 0.40
 ```
 
-| Option | Default | Allowed range / behavior |
+Use a new output directory for every run; report files are never overwritten. Exit codes are `0` for success/help, `1` for I/O failure, and `2` for invalid arguments or unavailable GUI mode.
+
+## Configuration
+
+| Option | Default | Range or behavior |
 | --- | --- | --- |
-| `--input PATH` | Required in CLI mode | PNG/JPEG recommended; ImageIO formats supported |
-| `--output DIR` | `output/analysis` | Created if necessary; existing reports never replaced |
-| `--method NAME` | `Triangle` | `Triangle` or `Otsu` auto-threshold algorithms |
-| `--sensitivity N` | `0` | -50 to +50 offset added to the automatic threshold |
-| `--min-area N` | `30` | 2–100000 connected candidate pixels |
-| `--max-circularity F` | `0.50` | 0.01–1.00; filters out compact circular shapes |
-| `--correct-lighting [BOOL]` | `false` | Enable rolling-ball background correction |
-| `--closing N` | `0` | 0–10 px morphological closing radius to bridge small gaps |
-| `--max-dimension N` | `1600` | 64–2000; maximum analysis width or height |
-| `--gui` | No arguments also opens desktop | Requires a graphical display |
-| `--help`, `-h` | — | Show usage instructions |
+| `--input PATH` | Required in CLI mode | ImageIO-supported image; PNG/JPEG recommended |
+| `--output DIR` | `output/analysis` | Created when needed; existing report files are preserved |
+| `--method NAME` | `Triangle` | `Triangle` or `Otsu` |
+| `--sensitivity N` | `0` | `-50` to `+50`; higher accepts lighter pixels |
+| `--min-area N` | `30` | `2` to `100000` connected pixels |
+| `--max-circularity F` | `0.50` | `0.01` to `1.00`; lower favors elongated regions |
+| `--correct-lighting [BOOL]` | `false` | Flag alone means `true`; explicit `true`/`false` also accepted |
+| `--closing N` | `0` | `0` to `10` pixels of morphological closing |
+| `--max-dimension N` | `1600` | `64` to `2000` analysis pixels |
+| `--gui` | No arguments also open GUI | Requires a graphical display |
+| `--help`, `-h` | — | Prints CLI help |
 
-Use a different output folder for each run. Exit codes are `0` for success/help,
-`1` for I/O failures, and `2` for invalid arguments or an unavailable headless
-desktop. Zero candidates is a successful analysis, not an error.
-
-## Exports and measurement units
+## Exports and measurements
 
 | File | Contents |
 | --- | --- |
-| `overlay.png` | Analysis image with magenta candidate pixels and numbered red bounds |
+| `overlay.png` | Photograph with magenta candidate pixels and numbered red bounds |
 | `mask.png` | White accepted pixels on a black background |
-| `regions.csv` | Bounds, pixel count, box diagonal, circularity, estimated thickness, and orientation |
-| `report.json` | Method, dimensions, ImageJ threshold, settings, coverage, and regions |
+| `regions.csv` | Candidate bounds, area, diagonal, circularity, thickness estimate, and orientation |
+| `report.json` | Schema version, engine, settings, dimensions, threshold, coverage, and regions |
 
-Coordinates are **zero-based analysis-image pixels**, with the origin at the
-top left. Images larger than the configured limit are resized proportionally;
-small images are not enlarged.
+All coordinates are zero-based analysis-image pixels with the origin at the top left. Large inputs are resized proportionally, so reported values refer to the analysis image.
 
-Coverage is `100 × candidate pixels / analysis image pixels`. Diagonal is the
-bounding-box diagonal `sqrt(width² + height²)`, not traced crack length.
-Circularity is `4 × pi × (area / perimeter²)`. Measurements are not in millimeters.
-Estimated thickness is `candidate pixel count ÷ longest bounding-box side`; it is a screening
-aid in the resized analysis image, not a calibrated physical crack width.
-Neither coverage nor count represents severity or prediction confidence.
+- Coverage: `100 × candidate pixels ÷ analysis pixels`
+- Box diagonal: `sqrt(width² + height²)`; not traced crack length
+- Circularity: `4 × pi × area ÷ perimeter²`
+- Estimated thickness: `candidate pixels ÷ longest bounding-box side`
 
-## Detection algorithm
+These are image-space screening measurements, not millimetres, confidence scores, or severity ratings.
 
-1. Resize proportionally to the analysis limit and composite transparency on white.
-2. Convert RGB to weighted grayscale luminance: `(299R + 587G + 114B + 500) / 1000`.
-3. Optionally correct uneven illumination using rolling-ball background subtraction.
-4. Calculate automatic threshold using ImageJ (`Triangle` or `Otsu`) and apply sensitivity offset.
-5. Optionally perform morphological closing (`dilate` followed by `erode`) to bridge hairline gaps.
-6. Run ImageJ `ParticleAnalyzer` with minimum area and maximum circularity constraints.
-7. Render the accepted regions and export measurements.
+## Detection pipeline
 
-See [architecture details](docs/ARCHITECTURE.md).
+1. Validate the input header, enforce the 40-megapixel limit, resize if necessary, and composite transparency onto white.
+2. Convert RGB to weighted luminance using `(299R + 587G + 114B + 500) / 1000`.
+3. Optionally apply rolling-ball background correction.
+4. Calculate a Triangle or Otsu threshold and apply the sensitivity offset.
+5. Optionally close small binary gaps with dilation followed by erosion.
+6. Run ImageJ particle analysis with area and circularity filters.
+7. Create an immutable result, visualizations, measurements, and export reports.
 
-## Project structure
+See [Architecture and detection design](docs/ARCHITECTURE.md) for implementation details.
 
-```text
-.
-├── pom.xml                         # Maven build and ImageJ dependency integration
-├── .github/workflows/ci.yml        # Java compatibility and Javadoc checks
-├── docs/                          # Architecture, development guide, evaluation
-├── samples/                       # Synthetic clean/cracked examples
-├── scripts/
-│   ├── build.sh                   # Maven compile and executable shaded JAR
-│   ├── test.sh                    # Regression suite
-│   └── javadoc.sh                 # Strict API documentation generation
-└── src/
-    ├── main/java/org/wallcrack/
-    │   ├── app/                   # Application entry point
-    │   ├── cli/                   # Argument parsing and CLI workflow
-    │   ├── detection/             # ImageJ thresholding and particle analysis
-    │   ├── io/                    # Image loading, rendering, and exports
-    │   ├── model/                 # Configuration and analysis results
-    │   └── ui/                    # Swing desktop and previews
-    └── test/java/org/wallcrack/    # Regression suite and sample generator
-```
-
-## Tests and Javadoc
+## Testing and evaluation
 
 ```bash
 bash scripts/test.sh
 bash scripts/javadoc.sh
 ```
 
-Open `target/site/jacoco/index.html` for coverage and `build/docs/index.html` for
-API documentation. `mvn test` runs JUnit quickly; `mvn verify` also enforces the
-coverage baseline. Field-image evaluation is documented in `evaluation/README.md`.
+`scripts/test.sh` runs JUnit 5, packages the application, generates JaCoCo reports, and enforces the coverage baseline. Open `target/site/jacoco/index.html` for coverage and `build/docs/index.html` for Javadoc.
 
-## Limitations and future work
+The regression suite uses reproducible synthetic fixtures to verify software behavior. For real photographs, add consented and labelled images using [the field-evaluation guide](evaluation/README.md), then run:
 
-- Shadows, seams, cables, brick joints, stains, and textured paint may resemble cracks.
-- Bright or faint cracks, blur, and low-resolution images may be missed.
-- Resizing may remove fine cracks; parameters refer to the resized image.
-- Only the first frame is read; EXIF orientation is not automatically applied.
-- Inputs above 40 megapixels must be resized before loading.
-- No labeled real-world dataset has been evaluated, so no accuracy claim is made.
+```bash
+bash scripts/evaluate.sh
+```
+
+No real-world accuracy claim is made until an appropriate labelled dataset is evaluated.
+
+## Project structure
+
+```text
+.
+├── .github/workflows/ci.yml        # Java 17/21/25 verification
+├── docs/                           # Architecture, development, evaluation, screenshots
+├── evaluation/                     # Labelled-field evaluation manifest and guide
+├── samples/                        # Reproducible synthetic input images
+├── scripts/                        # Build, test, Javadoc, and evaluation commands
+├── src/
+│   ├── main/java/org/wallcrack/
+│   │   ├── app/                    # GUI/CLI entry-point selection
+│   │   ├── cli/                    # CLI parsing and workflow
+│   │   ├── detection/              # ImageJ detection pipeline
+│   │   ├── io/                     # Image loading, rendering, and export
+│   │   ├── model/                  # Validated configuration and immutable results
+│   │   └── ui/                     # Swing workspace and image navigation
+│   └── test/java/org/wallcrack/    # JUnit, regression fixtures, and evaluation harness
+├── pom.xml                         # Maven build and dependencies
+└── README.md
+```
+
+Generated directories such as `target/`, `build/`, and `output/` are intentionally ignored.
+
+## Documentation
+
+- [Architecture and detection design](docs/ARCHITECTURE.md)
+- [Development and verification](docs/DEVELOPMENT.md)
+- [ImageJ evaluation](docs/IMAGEJ_EVALUATION.md)
+- [Synthetic sample provenance](samples/README.md)
+- [Labelled field-image evaluation](evaluation/README.md)
+
+## Limitations
+
+- Shadows, seams, cables, joints, stains, and textured paint can resemble cracks.
+- Bright, faint, blurred, or very small cracks may be missed.
+- Resizing can remove fine detail and changes the measurement coordinate scale.
+- Only the first image frame is decoded; EXIF orientation is not applied automatically.
+- Inputs larger than 40 megapixels must be resized before loading.
+- Zero candidates does not prove that a surface is crack-free.
+- The detector has not yet been validated on a representative labelled real-wall dataset.
