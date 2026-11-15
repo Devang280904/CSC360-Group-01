@@ -47,3 +47,54 @@ Here is what the project does in brief:
    - A black-and-white crack mask (`mask.png`)
    - An Excel-friendly CSV table (`regions.csv`)
    - A JSON report for saving records (`report.json`)
+
+---
+
+## How Code is Organized
+
+The entire Java code is organized into neat packages under `src/main/java/org/wallcrack/`. Here is the full breakdown in simple words:
+
+| Package Name | File Name | What This File Does |
+| :--- | :--- | :--- |
+| **`app`** | `Main.java` | Starting entry point of the project. Checks if you want to open the desktop window or run from command line. |
+| **`cli`** | `CommandLine.java` | Runs the project directly from Command Prompt or PowerShell without opening any graphical window. |
+| **`detection`** | `CrackDetector.java` | Main brain of the detection engine. Uses ImageJ to remove shadows, apply thresholding, and find connected crack particles. |
+| **`io`** | `ImageFiles.java` | Safely opens image files from disk, checks image limits, and handles image loading. |
+| **`io`** | `ReportExporter.java` | Generates and saves output files (`overlay.png`, `mask.png`, `regions.csv`, `report.json`) into the output folder. |
+| **`io`** | `ResultImages.java` | Draws the visual output by coloring crack pixels in magenta and drawing red numbered boxes on top of the original photo. |
+| **`model`** | `CrackRegion.java` | Data model that holds details of a single crack (box coordinates, width, height, pixel count, circularity, thickness). |
+| **`model`** | `DetectionConfig.java` | Stores user settings like selected threshold algorithm, sensitivity, minimum crack area, and lighting correction flag. |
+| **`model`** | `DetectionResult.java` | Holds the complete output after analysis (all detected cracks list, final mask, threshold used, and coverage percentage). |
+| **`ui`** | `DesktopTheme.java` | Contains all styling, fonts, clean button styles, and colors for the desktop application. |
+| **`ui`** | `DetectorFrame.java` | Main application window frame with title bar, top menus (File, Analysis, View, Help), and keyboard shortcuts. |
+| **`ui`** | `DetectorWorkspace.java` | Main screen workspace that connects the image viewer panel, settings sidebar, status indicators, and measurements table. |
+| **`ui`** | `ImagePanel.java` | Interactive canvas where the photo is displayed. Supports smooth mouse wheel zooming, dragging (panning), and pixel inspection. |
+
+---
+
+## Step-by-Step Flow of the Project
+
+Below is the simple 7-step flow of how an image moves through the system from start to finish:
+
+1. **Step 1 - Loading the Photo**:  
+   The user opens a wall image. The app checks that the image format is supported and not larger than 40 megapixels to avoid memory slowdowns.
+
+2. **Step 2 - Converting to Grayscale**:  
+   The colored photo (RGB) is converted into an 8-bit black-and-white grayscale image using standard luminance weights so brightness differences stand out.
+
+3. **Step 3 - Background Lighting Correction (Optional)**:  
+   If the wall has uneven lighting (like a tube light shining brighter on one corner), rolling-ball background subtraction smooths out the gradient so dark shadows are not mistaken for cracks.
+
+4. **Step 4 - Thresholding (ImageJ Engine)**:  
+   The application uses an automatic thresholding algorithm (**Triangle** or **Otsu**) to separate dark crack pixels from the brighter background wall surface.
+
+5. **Step 5 - Morphological Closing & Gap Bridging**:  
+   Thin hairline cracks often have tiny 1-pixel breaks. Morphological closing (dilation followed by erosion) bridges small broken gaps into one continuous crack line.
+
+6. **Step 6 - Particle Analysis & Filtering**:  
+   ImageJ Particle Analyzer scans connected pixels:
+   - Filters out tiny spots smaller than the **Minimum Area** (default 30 pixels).
+   - Filters out round marks using the **Maximum Circularity** filter (since cracks are long and jagged, not round like nail holes).
+
+7. **Step 7 - UI Display & Report Generation**:  
+   The accepted cracks are marked on the photo with magenta overlay and red bounding boxes. All numbers are displayed in the results table, ready to export into CSV, JSON, and PNG files.
