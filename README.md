@@ -9,8 +9,8 @@ This is a desktop application made in Java which helps you find and mark cracks 
 
 Here are sample screenshots showing how the application looks and works:
 
-| Desktop Workspace & Controls | Detected Crack Result |
-| :---: | :---: |
+| Desktop Workspace & Controls | 
+| :---: | 
 | <img src="docs/images/sample%20UI.jpeg" alt="Sample UI Screen" width="450"/>|
 | *Desktop workspace with image viewer, settings, and table* |
 
