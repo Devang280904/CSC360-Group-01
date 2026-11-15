@@ -9,10 +9,10 @@ This is a desktop application made in Java which helps you find and mark cracks 
 
 Here are sample screenshots showing how the application looks and works:
 
-| Desktop Workspace & Controls | Detected Crack Result |
-| :---: | :---: |
-| <img src="docs/images/sample%20UI.jpeg" alt="Sample UI Screen" width="450"/> | <img src="docs/images/demo.jpeg" alt="Crack Detection Demo" width="450"/> |
-| *Desktop workspace with image viewer, settings, and table* | *Detected crack marked with magenta color and red boundary box* |
+| Desktop Workspace & Controls | 
+| :---: | 
+| <img src="docs/images/sample%20UI.jpeg" alt="Sample UI Screen" width="450"/>|
+| *Desktop workspace with image viewer, settings, and table* |
 
 ---
 
