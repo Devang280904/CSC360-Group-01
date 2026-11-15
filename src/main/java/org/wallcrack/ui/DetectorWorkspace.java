@@ -763,7 +763,17 @@ public final class DetectorWorkspace extends JPanel {
             loadFile(alt);
             return;
         }
-        showError("Could not locate sample file: " + sampleName + ". Ensure you are running from the project root.");
+        runTask("Loading sample photograph...", () -> ImageFiles.read(
+                DetectorWorkspace.class.getResourceAsStream("/samples/" + sampleName), sampleName), image -> {
+            currentFilePath = null;
+            source = image;
+            original.setImage(image);
+            fileDimensionsBadge.setText(image.getWidth() + " × " + image.getHeight() + " px");
+            fileDimensionsBadge.setToolTipText("Bundled sample: " + sampleName);
+            invalidateAnalysis();
+            statusDot.setForeground(DesktopTheme.SUCCESS);
+            status.setText("Loaded bundled sample " + sampleName + ". Ready for analysis.");
+        });
     }
 
     /** Executes the wall crack detection algorithm in a background SwingWorker thread. */

@@ -196,6 +196,7 @@ public final class AnalysisTestSuite {
                     check(CommandLine.run(new String[]{"--input", "x", "--input", "y"}, stream, stream) == 2, "duplicate");
                     check(CommandLine.run(new String[]{"--input", "x", "--sensitivity", "abc"}, stream, stream) == 2, "not integer");
                     check(CommandLine.run(new String[]{"--input", "x", "--sensitivity", "51"}, stream, stream) == 2, "out of range");
+                    check(CommandLine.run(new String[]{"--input", "x", "--correct-lighting", "maybe"}, stream, stream) == 2, "invalid boolean");
                     check(CommandLine.run(new String[]{"--input", "x", "--threshold", "14"}, stream, stream) == 2, "obsolete flag rejected");
                 }
             });

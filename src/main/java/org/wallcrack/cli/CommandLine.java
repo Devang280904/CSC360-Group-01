@@ -50,7 +50,7 @@ public final class CommandLine {
             int minArea = number(options, "--min-area", defaults.minArea());
             double maxCirc = decimal(options, "--max-circularity", defaults.maxCircularity());
             boolean correctLighting = options.containsKey("--correct-lighting")
-                    ? Boolean.parseBoolean(options.get("--correct-lighting"))
+                    ? booleanValue(options.get("--correct-lighting"), "--correct-lighting")
                     : defaults.correctLighting();
             int closing = number(options, "--closing", defaults.closingRadius());
             int maxDim = number(options, "--max-dimension", defaults.maxDimension());
@@ -101,20 +101,35 @@ public final class CommandLine {
 
     private static Map<String, String> parse(String[] args) {
         Map<String, String> options = new HashMap<>();
-        for (int i = 0; i < args.length; i += 2) {
+        for (int i = 0; i < args.length;) {
             String option = args[i];
             if (OBSOLETE_OPTIONS.contains(option)) {
                 throw new IllegalArgumentException("Option " + option + " is obsolete. Use the new ImageJ parameters. See --help.");
             }
             if (!OPTIONS.contains(option)) throw new IllegalArgumentException("Unknown option: " + option);
+            if (option.equals("--correct-lighting")
+                    && (i + 1 >= args.length || args[i + 1].startsWith("--"))) {
+                if (options.putIfAbsent(option, "true") != null) {
+                    throw new IllegalArgumentException("Duplicate option: " + option);
+                }
+                i++;
+                continue;
+            }
             if (i + 1 >= args.length || args[i + 1].startsWith("--") || args[i + 1].isBlank()) {
                 throw new IllegalArgumentException("Missing value for " + option);
             }
             if (options.putIfAbsent(option, args[i + 1]) != null) {
                 throw new IllegalArgumentException("Duplicate option: " + option);
             }
+            i += 2;
         }
         return options;
+    }
+
+    private static boolean booleanValue(String value, String name) {
+        if (value.equalsIgnoreCase("true")) return true;
+        if (value.equalsIgnoreCase("false")) return false;
+        throw new IllegalArgumentException(name + " must be true or false.");
     }
 
     private static int number(Map<String, String> options, String name, int fallback) {

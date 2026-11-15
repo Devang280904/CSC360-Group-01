@@ -2,6 +2,7 @@ package org.wallcrack.io;
 
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import javax.imageio.ImageIO;
@@ -34,33 +35,52 @@ public final class ImageFiles {
         }
 
         try (ImageInputStream input = ImageIO.createImageInputStream(path.toFile())) {
-            if (input == null) throw new IOException("Cannot open image: " + path);
+            return readImage(input, path.toString());
+        }
+    }
 
-            var readers = ImageIO.getImageReaders(input);
-            if (!readers.hasNext()) {
-                throw new IOException("Unsupported image. Choose a PNG or JPEG photograph.");
+    /**
+     * Reads an image from a classpath or other managed stream.
+     *
+     * @param stream encoded image stream
+     * @param description source name used in diagnostics
+     * @return decoded image
+     * @throws IOException if the image is unsupported, corrupt, or too large
+     */
+    public static BufferedImage read(InputStream stream, String description) throws IOException {
+        if (stream == null) throw new IOException("Image resource does not exist: " + description);
+        try (stream; ImageInputStream input = ImageIO.createImageInputStream(stream)) {
+            return readImage(input, description);
+        }
+    }
+
+    private static BufferedImage readImage(ImageInputStream input, String description) throws IOException {
+        if (input == null) throw new IOException("Cannot open image: " + description);
+
+        var readers = ImageIO.getImageReaders(input);
+        if (!readers.hasNext()) {
+            throw new IOException("Unsupported image. Choose a PNG or JPEG photograph.");
+        }
+
+        ImageReader reader = readers.next();
+        try {
+            // Seek-forward-only and ignore metadata to optimize header parsing speed
+            reader.setInput(input, true, true);
+            int width = reader.getWidth(0);
+            int height = reader.getHeight(0);
+
+            // Enforce dimension sanity and 40-megapixel heap boundary
+            if (width < 1 || height < 1 || (long) width * height > MAX_INPUT_PIXELS) {
+                throw new IOException("Image exceeds the 40 megapixel limit. Resize it before loading.");
             }
 
-            ImageReader reader = readers.next();
-            try {
-                // Seek-forward-only and ignore metadata to optimize header parsing speed
-                reader.setInput(input, true, true);
-                int width = reader.getWidth(0);
-                int height = reader.getHeight(0);
-
-                // Enforce dimension sanity and 40-megapixel heap boundary
-                if (width < 1 || height < 1 || (long) width * height > MAX_INPUT_PIXELS) {
-                    throw new IOException("Image exceeds the 40 megapixel limit. Resize it before loading.");
-                }
-
-                // Decode only the first frame
-                BufferedImage image = reader.read(0);
-                if (image == null) throw new IOException("The image could not be decoded.");
-                return image;
-            } finally {
-                // Always dispose native ImageReader resources
-                reader.dispose();
-            }
+            // Decode only the first frame
+            BufferedImage image = reader.read(0);
+            if (image == null) throw new IOException("The image could not be decoded.");
+            return image;
+        } finally {
+            // Always dispose native ImageReader resources
+            reader.dispose();
         }
     }
 }
