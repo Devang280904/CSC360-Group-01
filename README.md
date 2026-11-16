@@ -104,10 +104,29 @@ Below is the simple 7-step flow of how an image moves through the system from st
 
 ### Requirements
 - **Java JDK 17 or higher** installed on your computer
-- **Maven 3.9+** (optional, pre-built executable JAR is already included)
+- **Maven 3.9+** to build the executable JAR
+
+### Build the JAR (first time only)
+The `build/` folder is not stored in Git, so build the JAR once after cloning:
+```bash
+bash scripts/build.sh
+```
+On Windows without Bash, run `mvn clean package -DskipTests` and copy
+`target/wall-crack-detector-1.0.0.jar` to `build/wall-crack-detector.jar`.
 
 ### Easy Way (Windows):
-Simply double-click the **`run.bat`** file in the root folder to launch the desktop application.
+After building, double-click the **`run.bat`** file in the root folder to launch the desktop application.
+
+### Easy Way (Ubuntu / Linux):
+After building, run:
+```bash
+./run.sh
+```
+On Linux, Java only supports whole-number UI scales (1, 2, 3) and ignores
+Ubuntu's fractional scaling (125%, 150%), so on high-resolution laptop screens the
+app can look tiny. `run.sh` picks scale 2 automatically when the screen is at least
+2560 px wide. To choose it yourself: `UI_SCALE=1 ./run.sh` or `UI_SCALE=2 ./run.sh`.
+The same works with plain Java: `java -Dsun.java2d.uiScale=2 -jar build/wall-crack-detector.jar`.
 
 ### From Terminal (Command Prompt / PowerShell):
 To open the desktop interface:
@@ -130,19 +149,12 @@ Here is how the project files and folders are arranged:
 CSC360-Group-01/
 ├── docs/                               # Project documentation and pictures
 │   ├── images/                         # Application screenshots
-│   │   ├── demo.jpeg                   # Result overlay demo screenshot
-│   │   └── sample UI.jpeg              # Desktop application user interface screenshot
-│   ├── ARCHITECTURE.md                 # Technical design documentation
-│   └── DEVELOPMENT.md                  # Development setup guide
-├── evaluation/                         # Evaluation datasets and scripts
-│   ├── labels.csv                      # Test labels
-│   └── README.md                       # Field evaluation instructions
+│       └── sample UI.jpeg              # Desktop application screenshot (shown above)
 ├── samples/                            # Sample wall photos for instant testing
 │   ├── wall-clean.png                  # Clean wall photo without cracks
 │   └── wall-cracked.png                # Wall photo containing a crack
 ├── scripts/                            # Helper shell scripts
 │   ├── build.sh                        # Builds the executable shaded JAR
-│   ├── evaluate.sh                     # Runs field evaluation tests
 │   ├── javadoc.sh                      # Generates Java API documentation
 │   └── test.sh                         # Runs all unit tests
 ├── src/                                # Main Java source code
@@ -155,5 +167,7 @@ CSC360-Group-01/
 │   │   └── ui/                         # Swing UI components (Frame, Workspace, Panel)
 │   └── test/java/org/wallcrack/        # JUnit regression test suite
 ├── pom.xml                             # Maven build and dependencies file
+├── run.bat                             # Windows launcher for the desktop app
+├── run.sh                              # Linux launcher (handles display scaling)
 └── README.md                           # Main project guide (this file)
 ```

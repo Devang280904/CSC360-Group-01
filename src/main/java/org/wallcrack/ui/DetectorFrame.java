@@ -39,9 +39,12 @@ public final class DetectorFrame extends JFrame {
         // Multi-resolution application icons
         setIconImages(DesktopTheme.createApplicationIcons());
 
+        // Size relative to the usable screen area. If the restored ("normal") size equals the
+        // maximized size, the title-bar maximize/restore button appears to do nothing, which
+        // happens on small or HiDPI-scaled screens when fixed pixel sizes are clamped to the screen.
         var screen = GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
-        setMinimumSize(new Dimension(Math.min(1180, screen.width), Math.min(760, screen.height)));
-        setSize(Math.min(1500, screen.width), Math.min(960, screen.height));
+        setMinimumSize(new Dimension(Math.min(1180, screen.width * 3 / 4), Math.min(760, screen.height * 3 / 4)));
+        setSize(Math.min(1500, screen.width * 17 / 20), Math.min(960, screen.height * 17 / 20));
 
         workspace = new DetectorWorkspace();
         setContentPane(workspace);

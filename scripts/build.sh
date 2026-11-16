@@ -5,4 +5,6 @@ cd "$(dirname "$0")/.."
 mvn -q clean package -DskipTests
 mkdir -p build
 cp target/wall-crack-detector-1.0.0.jar build/wall-crack-detector.jar
+# Remove Maven intermediates; only the runnable JAR is needed.
+rm -rf target dependency-reduced-pom.xml
 echo "Built build/wall-crack-detector.jar"

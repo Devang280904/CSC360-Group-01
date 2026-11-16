@@ -21,6 +21,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.Callable;
@@ -98,6 +99,8 @@ public final class DetectorWorkspace extends JPanel {
     private final JLabel maxDimBadge = DesktopTheme.badge("1600 px", DesktopTheme.CYAN_DARK, DesktopTheme.CYAN);
     private final transient List<JSpinner> settings = List.of(sensitivity, minArea, maxCircularity, closingRadius,
             maxDimension);
+    /** Sliders mirror the spinners and must be locked together with them while a task runs. */
+    private final transient List<JSlider> sliders = new ArrayList<>();
     private boolean resettingSettings;
 
     // Image previews
@@ -650,34 +653,15 @@ public final class DetectorWorkspace extends JPanel {
         regionTable.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent event) {
-                if (event.getClickCount() == 2 && regionTable.getSelectedRow() >= 0 && result != null) {
-                    int modelRow = regionTable.convertRowIndexToModel(regionTable.getSelectedRow());
-                    int regionId = (int) table.getValueAt(modelRow, 0);
-                    for (CrackRegion r : result.regions()) {
-                        if (r.id() == regionId) {
-                            overlay.centerOnRegion(r);
-                            break;
-                        }
-                    }
+                if (event.getClickCount() == 2) {
+                    centerOnSelectedRegion();
                 }
             }
         });
 
         JPopupMenu popup = new JPopupMenu();
         JMenuItem centerItem = new JMenuItem("Center View on this Crack");
-        centerItem.addActionListener(e -> {
-            int selectedRow = regionTable.getSelectedRow();
-            if (selectedRow >= 0 && result != null) {
-                int modelRow = regionTable.convertRowIndexToModel(selectedRow);
-                int regionId = (int) table.getValueAt(modelRow, 0);
-                for (CrackRegion r : result.regions()) {
-                    if (r.id() == regionId) {
-                        overlay.centerOnRegion(r);
-                        break;
-                    }
-                }
-            }
-        });
+        centerItem.addActionListener(e -> centerOnSelectedRegion());
         JMenuItem copyRowItem = new JMenuItem("Copy Region Details");
         copyRowItem.addActionListener(e -> {
             int selectedRow = regionTable.getSelectedRow();
@@ -705,6 +689,26 @@ public final class DetectorWorkspace extends JPanel {
         tableScroll.getViewport().setBackground(DesktopTheme.CARD_BACKGROUND);
         panel.add(tableScroll, BorderLayout.CENTER);
         return panel;
+    }
+
+    /**
+     * Zooms the overlay onto the region selected in the table. The overlay is the only
+     * result view that draws region boxes, so it is brought to the front first; otherwise
+     * centering would happen on a hidden panel while the binary mask view is showing.
+     */
+    private void centerOnSelectedRegion() {
+        int selectedRow = regionTable.getSelectedRow();
+        if (selectedRow < 0 || result == null)
+            return;
+        int modelRow = regionTable.convertRowIndexToModel(selectedRow);
+        int regionId = (int) table.getValueAt(modelRow, 0);
+        for (CrackRegion r : result.regions()) {
+            if (r.id() == regionId) {
+                setViewMode("Highlighted Overlay");
+                overlay.centerOnRegion(r);
+                return;
+            }
+        }
     }
 
     private JPanel createStatusBar() {
@@ -820,6 +824,7 @@ public final class DetectorWorkspace extends JPanel {
         new DropTarget(this, dropAdapter);
         new DropTarget(original, dropAdapter);
         new DropTarget(overlay, dropAdapter);
+        new DropTarget(mask, dropAdapter);
     }
 
     /** Prompts the user to select an image file via desktop file chooser. */
@@ -1191,7 +1196,6 @@ public final class DetectorWorkspace extends JPanel {
         maxSpanMetric.setForeground(DesktopTheme.AMBER_GOLD);
         analysisSize.setText("—");
         analysisSize.setForeground(DesktopTheme.EMERALD_MINT);
-        analysisSize.setText("—");
         analysisScaleDetail.setText(source != null ? source.getWidth() + " × " + source.getHeight() + " px loaded"
                 : "Analysis limit: 1600 px");
         if (source != null) {
@@ -1214,6 +1218,8 @@ public final class DetectorWorkspace extends JPanel {
         correctLighting.setEnabled(!busy);
         for (JSpinner setting : settings)
             setting.setEnabled(!busy);
+        for (JSlider slider : sliders)
+            slider.setEnabled(!busy);
     }
 
     private void showError(String message) {
@@ -1241,7 +1247,7 @@ public final class DetectorWorkspace extends JPanel {
         return sep;
     }
 
-    private static void addSliderControl(JPanel panel, GridBagConstraints gbc,
+    private void addSliderControl(JPanel panel, GridBagConstraints gbc,
             String label, JSpinner spinner, JLabel badge,
             String tooltip, int min, int max,
             java.util.function.IntFunction<String> formatter,
@@ -1264,6 +1270,7 @@ public final class DetectorWorkspace extends JPanel {
         slider.setOpaque(false);
         slider.setUI(new DesktopTheme.ModernSliderUI(slider, accentColor));
         slider.setToolTipText(tooltip);
+        sliders.add(slider);
 
         badge.setText(formatter.apply(value(spinner)));
 
@@ -1284,7 +1291,7 @@ public final class DetectorWorkspace extends JPanel {
         panel.add(slider, gbc);
     }
 
-    private static void addDoubleSliderControl(JPanel panel, GridBagConstraints gbc,
+    private void addDoubleSliderControl(JPanel panel, GridBagConstraints gbc,
             String label, JSpinner spinner, JLabel badge,
             String tooltip, double min, double max,
             Color accentColor) {
@@ -1310,6 +1317,7 @@ public final class DetectorWorkspace extends JPanel {
         slider.setOpaque(false);
         slider.setUI(new DesktopTheme.ModernSliderUI(slider, accentColor));
         slider.setToolTipText(tooltip);
+        sliders.add(slider);
 
         badge.setText(String.format(Locale.ROOT, "%.2f", ((Number) spinner.getValue()).doubleValue()));
 
