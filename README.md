@@ -9,10 +9,24 @@ This Java desktop application helps identify and mark crack-like regions in wall
 
 Here are sample screenshots showing how the application looks and works:
 
-| Highlighted Overlay View | Binary Mask View |
-| :---: | :---: |
-| <img src="docs/images/image_3.png" alt="Highlighted Overlay View" width="450" /> | <img src="docs/images/image_4.png" alt="Binary Mask View" width="450" /> |
-| *Original photo with candidate pixels in magenta and numbered bounding boxes* | *Binary mask showing accepted candidate pixels on a black background* |
+<table width="100%">
+  <tr>
+    <th width="50%">Highlighted Overlay View</th>
+    <th width="50%">Binary Mask View</th>
+  </tr>
+  <tr>
+    <td width="50%" align="center">
+      <img src="docs/images/image_3.png" alt="Highlighted Overlay View" width="100%" />
+    </td>
+    <td width="50%" align="center">
+      <img src="docs/images/image_4.png" alt="Binary Mask View" width="100%" />
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center"><em>Original photo with candidate pixels in magenta and numbered bounding boxes</em></td>
+    <td width="50%" align="center"><em>Binary mask showing accepted candidate pixels on a black background</em></td>
+  </tr>
+</table>
 
 ---
 
