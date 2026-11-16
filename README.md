@@ -9,10 +9,10 @@ This is a desktop application made in Java which helps you find and mark cracks 
 
 Here are sample screenshots showing how the application looks and works:
 
-| Desktop Workspace & Controls | 
-| :---: | 
-| <img src="docs/images/sample%20UI.jpeg" alt="Sample UI Screen" width="450"/>|
-| *Desktop workspace with image viewer, settings, and table* |
+| Highlighted Overlay View | Binary Mask View |
+| :---: | :---: |
+| <img src="docs/images/image_3.png" alt="Highlighted Overlay View" width="450" /> | <img src="docs/images/image_4.png" alt="Binary Mask View" width="450" /> |
+| *Desktop workspace showing original photo alongside candidate crack pixels in magenta with numbered bounding boxes* | *High-contrast binary mask view showing extracted crack lines on black background* |
 
 ---
 
@@ -142,7 +142,10 @@ Here is how the project files and folders are arranged:
 CSC360-Group-01/
 ├── docs/                               # Project documentation and pictures
 │   ├── images/                         # Application screenshots
-│       └── sample UI.jpeg              # Desktop application screenshot (shown above)
+│   │   ├── image_1.png                 # Desktop workflow preview
+│   │   ├── image_2.png                 # Detection capabilities preview
+│   │   ├── image_3.png                 # Highlighted overlay inspection view (shown above)
+│   │   └── image_4.png                 # Binary mask inspection view (shown above)
 ├── samples/                            # Sample wall photos for instant testing
 │   ├── wall-clean.png                  # Clean wall photo without cracks
 │   └── wall-cracked.png                # Wall photo containing a crack
