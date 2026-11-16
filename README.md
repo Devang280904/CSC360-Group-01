@@ -1,6 +1,6 @@
 # Wall Crack Detector - Java Application for Detecting Cracks in Walls
 
-This is a desktop application made in Java which helps you find and mark cracks on wall photos automatically. You just have to load any wall photo, and this software will scan the photo, find crack-like lines, mark them with bright colours, and give you a detailed list with measurements like crack size and location.
+This Java desktop application helps identify and mark crack-like regions in wall photographs. Load a wall photo and the software scans it for dark, line-shaped candidates, highlights them with bright colours, and reports image-space measurements such as pixel area and location.
 
 
 ---
@@ -9,10 +9,10 @@ This is a desktop application made in Java which helps you find and mark cracks 
 
 Here are sample screenshots showing how the application looks and works:
 
-| Desktop Workspace & Controls | 
-| :---: | 
-| <img src="docs/images/sample%20UI.jpeg" alt="Sample UI Screen" width="450"/>|
-| *Desktop workspace with image viewer, settings, and table* |
+| Highlighted Overlay View | Binary Mask View |
+| :---: | :---: |
+| <img src="docs/images/image_3.png" alt="Highlighted Overlay View" width="450" /> | <img src="docs/images/image_4.png" alt="Binary Mask View" width="450" /> |
+| *Original photo with candidate pixels in magenta and numbered bounding boxes* | *Binary mask showing accepted candidate pixels on a black background* |
 
 ---
 
@@ -28,24 +28,26 @@ Here are sample screenshots showing how the application looks and works:
 
 ## What Does This Project Do?
 
-In simple words, this project helps civil engineers, building supervisors, and students to quickly check wall photos for cracks without doing manual marking.
+In simple words, this project helps civil engineers, building supervisors, and students perform preliminary visual screening of wall photographs without manually marking every possible crack.
 
 Here is what the project does in brief:
 
 1. **Loads Photos Easily**: You can open any common wall photograph (PNG or JPEG) from your computer, or just drag and drop it into the app window.
-2. **Cleans the Image**: Wall pictures often have uneven room light and shadows. The application automatically removes bad shadows so that only the actual surface is visible clearly.
-3. **Catches Dark Lines (Cracks)**: It automatically scans dark lines running across the wall surface using automated thresholding.
-4. **Removes Noise**: It is smart enough to ignore small circular dirt spots, nail holes, and dust dots, picking only long, thin crack lines.
-5. **Highlights Cracks Clearly**: 
-   - Marked crack pixels are shown in bright **magenta (pink-purple)** colour.
-   - Each separate crack gets a numbered **red box** around it.
-6. **Shows Complete Measurements Table**: It calculates and displays the exact size, pixel count, diagonal length, circularity, and thickness of every crack found.
-7. **Interactive Click & Zoom**: If you click on any crack row in the table, the image immediately zooms and moves directly to that crack so you can inspect it closely.
+2. **Handles Uneven Lighting**: When enabled, optional lighting correction reduces gradual brightness changes that could affect detection.
+3. **Finds Dark Candidate Lines**: It uses automatic thresholding to identify dark pixels that may belong to cracks.
+4. **Filters Common Noise**: Area and circularity filters reject many small or compact marks, although difficult surfaces may still produce false candidates.
+5. **Highlights Candidates Clearly**:
+   - Accepted candidate pixels are shown in bright **magenta (pink-purple)** colour.
+   - Each separate candidate region gets a numbered **red box** around it.
+6. **Shows Image-Space Measurements**: It displays the bounding-box size, pixel count, bounding-box diagonal, circularity, and estimated thickness of every accepted candidate.
+7. **Interactive Click & Zoom**: If you click on a candidate row in the table, the image immediately zooms and moves to that region so you can inspect it closely.
 8. **Export Reports**: With one click, it saves:
    - An overlay picture showing all markings (`overlay.png`)
-   - A black-and-white crack mask (`mask.png`)
+   - A black-and-white candidate mask (`mask.png`)
    - An Excel-friendly CSV table (`regions.csv`)
    - A JSON report for saving records (`report.json`)
+
+The results require visual review. The application identifies crack candidates and does not assess structural safety.
 
 ---
 
@@ -57,13 +59,13 @@ The entire Java code is organized into neat packages under `src/main/java/org/wa
 | :--- | :--- | :--- |
 | **`app`** | `Main.java` | Starting entry point of the project. Checks if you want to open the desktop window or run from command line. |
 | **`cli`** | `CommandLine.java` | Runs the project directly from Command Prompt or PowerShell without opening any graphical window. |
-| **`detection`** | `CrackDetector.java` | Main brain of the detection engine. Uses ImageJ to remove shadows, apply thresholding, and find connected crack particles. |
+| **`detection`** | `CrackDetector.java` | Main detection engine. Uses ImageJ for optional lighting correction, thresholding, and connected-region analysis. |
 | **`io`** | `ImageFiles.java` | Safely opens image files from disk, checks image limits, and handles image loading. |
 | **`io`** | `ReportExporter.java` | Generates and saves output files (`overlay.png`, `mask.png`, `regions.csv`, `report.json`) into the output folder. |
-| **`io`** | `ResultImages.java` | Draws the visual output by coloring crack pixels in magenta and drawing red numbered boxes on top of the original photo. |
-| **`model`** | `CrackRegion.java` | Data model that holds details of a single crack (box coordinates, width, height, pixel count, circularity, thickness). |
-| **`model`** | `DetectionConfig.java` | Stores user settings like selected threshold algorithm, sensitivity, minimum crack area, and lighting correction flag. |
-| **`model`** | `DetectionResult.java` | Holds the complete output after analysis (all detected cracks list, final mask, threshold used, and coverage percentage). |
+| **`io`** | `ResultImages.java` | Draws the visual output by colouring candidate pixels in magenta and adding red numbered boxes to the original photo. |
+| **`model`** | `CrackRegion.java` | Data model that holds details of a candidate region (box coordinates, width, height, pixel count, circularity, estimated thickness). |
+| **`model`** | `DetectionConfig.java` | Stores settings such as the threshold algorithm, sensitivity, minimum candidate area, and lighting-correction option. |
+| **`model`** | `DetectionResult.java` | Holds the complete output after analysis (candidate list, final mask, threshold used, and coverage percentage). |
 | **`ui`** | `DesktopTheme.java` | Contains all styling, fonts, clean button styles, and colors for the desktop application. |
 | **`ui`** | `DetectorFrame.java` | Main application window frame with title bar, top menus (File, Analysis, View, Help), and keyboard shortcuts. |
 | **`ui`** | `DetectorWorkspace.java` | Main screen workspace that connects the image viewer panel, settings sidebar, status indicators, and measurements table. |
@@ -76,27 +78,27 @@ The entire Java code is organized into neat packages under `src/main/java/org/wa
 Below is the simple 7-step flow of how an image moves through the system from start to finish:
 
 1. **Step 1 - Loading the Photo**:  
-   The user opens a wall image. The app checks that the image format is supported and not larger than 40 megapixels to avoid memory slowdowns.
+   The user opens a wall image. The app checks that the format is supported and enforces a 40-megapixel limit to control memory usage.
 
 2. **Step 2 - Converting to Grayscale**:  
    The colored photo (RGB) is converted into an 8-bit black-and-white grayscale image using standard luminance weights so brightness differences stand out.
 
 3. **Step 3 - Background Lighting Correction (Optional)**:  
-   If the wall has uneven lighting (like a tube light shining brighter on one corner), rolling-ball background subtraction smooths out the gradient so dark shadows are not mistaken for cracks.
+   When enabled, rolling-ball background subtraction reduces gradual lighting variations that might otherwise affect thresholding.
 
 4. **Step 4 - Thresholding (ImageJ Engine)**:  
-   The application uses an automatic thresholding algorithm (**Triangle** or **Otsu**) to separate dark crack pixels from the brighter background wall surface.
+   The application uses an automatic thresholding algorithm (**Triangle** or **Otsu**) to separate dark candidate pixels from the brighter wall background.
 
 5. **Step 5 - Morphological Closing & Gap Bridging**:  
-   Thin hairline cracks often have tiny 1-pixel breaks. Morphological closing (dilation followed by erosion) bridges small broken gaps into one continuous crack line.
+   When enabled, morphological closing (dilation followed by erosion) bridges small gaps between nearby candidate pixels.
 
 6. **Step 6 - Particle Analysis & Filtering**:  
    ImageJ Particle Analyzer scans connected pixels:
    - Filters out tiny spots smaller than the **Minimum Area** (default 30 pixels).
-   - Filters out round marks using the **Maximum Circularity** filter (since cracks are long and jagged, not round like nail holes).
+   - Filters compact marks using the **Maximum Circularity** setting because crack-like regions are usually more elongated than circular spots.
 
 7. **Step 7 - UI Display & Report Generation**:  
-   The accepted cracks are marked on the photo with magenta overlay and red bounding boxes. All numbers are displayed in the results table, ready to export into CSV, JSON, and PNG files.
+   Accepted candidate regions are marked with a magenta overlay and red bounding boxes. Their image-space measurements appear in the results table and can be exported as CSV, JSON, and PNG files.
 
 ---
 
@@ -106,8 +108,8 @@ Below is the simple 7-step flow of how an image moves through the system from st
 - **Java JDK 17 or higher** installed on your computer
 - **Maven 3.9+** to build the executable JAR
 
-### Build the JAR (first time only)
-The `build/` folder is not stored in Git, so build the JAR once after cloning:
+### Build the JAR
+The `build/` folder is not stored in Git. Build the JAR after cloning and rebuild it whenever the source code changes:
 ```bash
 bash scripts/build.sh
 ```
@@ -120,9 +122,8 @@ From the project folder:
 java -jar build/wall-crack-detector.jar
 ```
 
-**App looks tiny on Linux?** On high-resolution laptop screens, Java ignores
-Ubuntu's fractional scaling (125%, 150%) and only supports whole-number scales.
-Start it at 2× instead:
+**App looks tiny on Linux?** Some Java desktop environments may not follow
+fractional display scaling correctly. You can start the application at 2× scale:
 ```bash
 java -Dsun.java2d.uiScale=2 -jar build/wall-crack-detector.jar
 ```
@@ -142,7 +143,10 @@ Here is how the project files and folders are arranged:
 CSC360-Group-01/
 ├── docs/                               # Project documentation and pictures
 │   ├── images/                         # Application screenshots
-│       └── sample UI.jpeg              # Desktop application screenshot (shown above)
+│   │   ├── image_1.png                 # Desktop workflow preview
+│   │   ├── image_2.png                 # Detection capabilities preview
+│   │   ├── image_3.png                 # Highlighted overlay inspection view (shown above)
+│   │   └── image_4.png                 # Binary mask inspection view (shown above)
 ├── samples/                            # Sample wall photos for instant testing
 │   ├── wall-clean.png                  # Clean wall photo without cracks
 │   └── wall-cracked.png                # Wall photo containing a crack
