@@ -42,12 +42,12 @@ public final class SampleImages {
 
     /**
      * Writes deterministic demonstration files into the requested directory.
-     * @param args optional output directory, defaulting to samples
+     * @param args optional output directory, defaulting to src/main/resources/samples
      * @throws Exception when a sample cannot be written
      */
     public static void main(String[] args) throws Exception {
         System.setProperty("java.awt.headless", "true");
-        Path directory = Path.of(args.length == 0 ? "samples" : args[0]);
+        Path directory = Path.of(args.length == 0 ? "src/main/resources/samples" : args[0]);
         Files.createDirectories(directory);
         BufferedImage clean = solid(800, 600, 230);
         Random random = new Random(360);

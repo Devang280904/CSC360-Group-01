@@ -144,7 +144,7 @@ java -Dsun.java2d.uiScale=2 -jar build/wall-crack-detector.jar
 
 To run detection on an image from command line without opening a window:
 ```powershell
-java -jar build/wall-crack-detector.jar --input samples/wall-cracked.png --output output/results
+java -jar build/wall-crack-detector.jar --input src/main/resources/samples/wall-cracked.png --output output/results
 ```
 
 ---
@@ -161,9 +161,6 @@ CSC360-Group-01/
 │   │   ├── image_2.png                 # Detection capabilities preview
 │   │   ├── image_3.png                 # Highlighted overlay inspection view (shown above)
 │   │   └── image_4.png                 # Binary mask inspection view (shown above)
-├── samples/                            # Sample wall photos for instant testing
-│   ├── wall-clean.png                  # Clean wall photo without cracks
-│   └── wall-cracked.png                # Wall photo containing a crack
 ├── scripts/                            # Helper shell scripts
 │   ├── build.sh                        # Builds the executable shaded JAR
 │   ├── javadoc.sh                      # Generates Java API documentation
@@ -176,6 +173,9 @@ CSC360-Group-01/
 │   │   ├── io/                         # File loading and exporting
 │   │   ├── model/                      # Data models and configurations
 │   │   └── ui/                         # Swing UI components (Frame, Workspace, Panel)
+│   ├── main/resources/samples/         # Sample wall photos bundled into the JAR
+│   │   ├── wall-clean.png              # Clean wall photo without cracks
+│   │   └── wall-cracked.png            # Wall photo containing a crack
 │   └── test/java/org/wallcrack/        # JUnit regression test suite
 ├── pom.xml                             # Maven build and dependencies file
 └── README.md                           # Main project guide (this file)

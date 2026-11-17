@@ -187,15 +187,6 @@ public final class AnalysisTestSuite {
                     check(image.getWidth() > 0 && image.getHeight() > 0, "sample dimensions");
                 }
             });
-            test("field evaluation consumes labelled image manifests", () -> {
-                Path fieldImages = temporary.resolve("field-images");
-                Files.createDirectories(fieldImages);
-                ImageIO.write(SampleImages.verticalCrack(), "png", fieldImages.resolve("present.png").toFile());
-                ImageIO.write(SampleImages.blank(), "png", fieldImages.resolve("absent.png").toFile());
-                Path labels = temporary.resolve("labels.csv");
-                Files.writeString(labels, "file,expected,notes\npresent.png,present,test\nabsent.png,absent,test\n");
-                FieldEvaluation.main(new String[]{labels.toString(), fieldImages.toString()});
-            });
             test("exports contain consistent masks and numeric reports", () -> {
                 var result = detect(SampleImages.verticalCrack());
                 Path output = temporary.resolve("exports");

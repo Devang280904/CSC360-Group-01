@@ -26,15 +26,6 @@
         </dependency>
     </dependencies>
     <build>
-        <resources>
-            <resource>
-                <directory>samples</directory>
-                <targetPath>samples</targetPath>
-                <includes>
-                    <include>*.png</include>
-                </includes>
-            </resource>
-        </resources>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
